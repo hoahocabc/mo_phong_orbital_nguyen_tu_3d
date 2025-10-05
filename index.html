@@ -13,37 +13,44 @@
     body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
     canvas { display:block; }
 
-    /* Left panel (controls & buttons) */
+    /* Top panels container: empty shell, contains two panels left/right */
     #ui {
-      position: absolute;
+      position: fixed;
       left: 12px;
-      top: 12px;
-      background: rgba(0,0,0,0.55);
-      padding: 12px;
-      border-radius: 8px;
-      z-index: 10003; /* Ensure UI sits above canvas */
-      color: #fff;
-      box-sizing: border-box;
-      box-shadow: 0 8px 22px rgba(0,0,0,0.6);
-      width: auto;
-      min-width: 120px;
-    }
-
-    /* Right panel (inputs & orbital label) */
-    #uiRight {
-      position: absolute;
       right: 12px;
       top: 12px;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none; /* let inner panels control pointer events */
+      z-index: 10003; /* Ensure UI sits above canvas */
+    }
+
+    /* Panel (used for both left and right); pointer-events enabled */
+    .panel {
+      pointer-events: auto;
       background: rgba(0,0,0,0.55);
       padding: 12px;
       border-radius: 8px;
-      z-index: 10003;
-      color: #fff;
       box-sizing: border-box;
+      color: #fff;
       box-shadow: 0 8px 22px rgba(0,0,0,0.6);
-      width: auto;
       min-width: 120px;
-      text-align: left;
+      max-width: 48%;
+    }
+
+    /* Left (buttons) should size to content and not expand too wide */
+    #uiLeft {
+      min-width: 120px;
+      max-width: 46%;
+      width: auto;
+    }
+
+    /* Right (inputs & orbital label) stays compact and aligned to right */
+    #uiRight {
+      min-width: 180px;
+      max-width: 56%;
+      width: auto;
+      text-align: right;
     }
 
     #heroTitle {
@@ -87,13 +94,11 @@
       flex-direction: column;
       gap: 6px;
       margin-bottom: 8px;
-      align-items: flex-start;
+      align-items: flex-end;
     }
 
-    /* nhỏ cỡ chữ nhãn để không chiếm nhiều diện tích */
-    #ui label,
-    #uiRight label {
-      font-size: 12px; /* giảm từ 13px xuống 12px */
+    #ui label {
+      font-size: 13px;
       margin: 0;
       color: #e6f0fb;
       white-space: nowrap;
@@ -104,10 +109,10 @@
     :root {
       --field-width: 160px;
       --field-height: 28px;
-      --field-font-size: 13px; /* giảm font-size mặc định của input/button 1px */
+      --field-font-size: 14px;
     }
 
-    #ui input[type="number"], #ui input[type="text"], #ui select,
+    /* Inputs and selects (right panel) keep the controlled width variable */
     #uiRight input[type="number"], #uiRight input[type="text"], #uiRight select {
       width: var(--field-width);
       height: var(--field-height);
@@ -137,7 +142,7 @@
       border-radius: 6px;
       border: 1px solid rgba(0,0,0,0.08);
       background: #000000;      /* closed background = black */
-      color: #ffffff !important;           /* đóng luôn để tránh hiện text màu tối */
+      color: #ffffff;           /* closed text = white */
       font-weight: 700;
       padding: 0 34px 0 12px;
       box-sizing: border-box;
@@ -145,7 +150,7 @@
       -moz-appearance: none;
       appearance: none;
       cursor: pointer;
-      -webkit-text-fill-color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff;
     }
     .select-wrap::after {
       content: "";
@@ -161,23 +166,26 @@
       pointer-events: none;
     }
 
-    /* focused/open: trắng background + chữ tối (khi focus) */
-    .select-wrap select.lang-select:focus,
-    .select-wrap select.lang-select:active {
-      color: #042027 !important;
-      background: #ffffff !important;
-      -webkit-text-fill-color: #042027 !important;
-    }
-
+    /* When the dropdown is focused / open in many browsers, options will be visible.
+       Ensure option styling: white background + dark text; hovered option blue + white text. */
     select.lang-select option,
     select.lang-select optgroup {
       color: #042027 !important;
       background-color: #ffffff !important;
     }
+    /* Hover style for options (browsers vary; we include it for those honoring option hover) */
     select.lang-select option:hover,
     select.lang-select option:focus {
       background-color: #0a6fb3 !important; /* blue hover */
       color: #ffffff !important;
+    }
+
+    /* Also ensure when select has focus its caret/arrow uses dark color for visibility */
+    .select-wrap select.lang-select:focus,
+    .select-wrap select.lang-select:active {
+      color: #042027;
+      background: #ffffff;
+      -webkit-text-fill-color: #042027;
     }
 
     .actions {
@@ -189,13 +197,17 @@
       position: relative;
       z-index: 10003;
     }
-    #ui .btn, #uiRight .btn {
+
+    /* Ensure buttons in left panel have equal width (use same variable as inputs).
+       This guarantees equal-sized buttons while leaving other styles intact. */
+    #uiLeft .actions { align-items: stretch; }
+    #uiLeft .btn, #uiLeft .btn.secondary, #uiLeft .actions > * {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       width: var(--field-width);
       height: var(--field-height);
-      padding: 0 10px;
+      padding: 0 12px;
       border-radius: 6px;
       border: 1px solid rgba(255,255,255,0.06);
       background: #ffffff;
@@ -204,7 +216,7 @@
       font-weight: 600;
       font-size: var(--field-font-size);
       box-sizing: border-box;
-      transition: filter .12s ease, box-shadow .12s ease;
+      transition: transform .12s ease, box-shadow .12s ease, filter .08s ease;
       box-shadow: none;
       white-space: nowrap;
       overflow: hidden;
@@ -212,27 +224,30 @@
       position: relative;
       z-index: 10004;
       min-width: 0;
+      max-width: 100%;
     }
-    #ui .btn.secondary, #uiRight .btn.secondary {
-      background: #ffffff;
+    /* Slightly different appearance for secondary */
+    #uiLeft .btn.secondary {
+      background: linear-gradient(#ffffff,#e9f3f8);
       color: #042027;
       border: 1px solid rgba(0,0,0,0.06);
     }
 
-    .actions > * {
-      display: block;
-      width: var(--field-width);
-      box-sizing: border-box;
-      position: relative;
+    /* Hover effect for accessible affordance */
+    #uiLeft .btn:hover, #uiLeft .btn:focus {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+      filter: brightness(1.03);
+      outline: none;
     }
 
-    /* thu nhỏ orbital label để không chiếm diện tích */
+    /* Orbital label (move to right panel & right-align) */
     #orbitalLabel {
       margin-top: 6px;
-      font-size: 13px; /* giảm từ 15px xuống 13px */
+      font-size: 15px;
       color: #cfeff8;
       line-height: 1.2;
-      text-align: left;
+      text-align: right;
       width: var(--field-width);
       white-space: nowrap;
       overflow: hidden;
@@ -241,9 +256,10 @@
       z-index: 10005;
       background: transparent;
       box-sizing: border-box;
+      margin-left: auto;
     }
-    #orbitalLabel sub { font-size: 0.75em; vertical-align: sub; }
-    #orbitalLabel sup { font-size: 0.65em; vertical-align: super; }
+    #orbitalLabel sub { font-size: 0.85em; vertical-align: sub; }
+    #orbitalLabel sup { font-size: 0.75em; vertical-align: super; }
 
     #progress {
       position: absolute;
@@ -274,80 +290,82 @@
     }
 
     .axis-label, #xLabel, #yLabel, #zLabel {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       color: #f1f8fb;
     }
 
     @media (max-width:480px){
       :root { --field-width: calc(100% - 40px); }
-      #ui { left: 8px; top: 8px; width: calc(50% - 16px); padding: 10px; }
-      #uiRight { right: 8px; top: 8px; width: calc(50% - 16px); padding: 10px; }
-      #ui .btn, #ui input[type="number"] { width: var(--field-width); }
+      #ui { left: 8px; right: 8px; top: 8px; }
+      .panel { padding: 10px; }
+      #ui .btn, #ui input[type="number"] { width: calc(100% - 40px); }
       .select-wrap { width: var(--field-width); }
       select.lang-select { width: 100%; }
       #heroTitle { font-size: 14px; top: 8px; }
       #footerCredit { font-size: 12px; bottom: 8px; }
-      /* For very small screens, stack vertically */
-      @media (max-width:360px) {
-        #ui, #uiRight { width: calc(100% - 16px); left: 8px; right: 8px; top: 8px; }
-        #uiRight { margin-top: 8px; }
-      }
+      /* stack panels vertically on very small screens */
+      #ui { flex-direction: column; gap:8px; align-items: stretch; }
+      #uiLeft, #uiRight { max-width: 100%; width: 100%; text-align: left; }
+      #orbitalLabel { text-align: left; width: auto; }
     }
   </style>
 </head>
 <body>
   <div id="heroTitle" aria-hidden="true">Mô phỏng Orbital 3D</div>
 
-  <!-- LEFT PANEL: language select + control buttons -->
+  <!-- Keep wrapper #ui for existing JS compatibility; it contains two panels -->
   <div id="ui" role="region" aria-label="Điều khiển">
-    <div id="uiHeader">
-      <div class="select-wrap" aria-hidden="false">
-        <label id="langHiddenLabel" for="langSelect" style="display:none">Ngôn ngữ</label>
-        <select id="langSelect" class="lang-select" aria-label="Chọn ngôn ngữ">
-          <option value="vi" selected>Tiếng Việt</option>
-          <option value="en">English</option>
-        </select>
+    <!-- Left panel: buttons and language (keeps #uiHeader for existing scripts) -->
+    <div id="uiLeft" class="panel" aria-label="Actions panel">
+      <div id="uiHeader">
+        <div class="select-wrap" aria-hidden="false">
+          <label id="langHiddenLabel" for="langSelect" style="display:none">Ngôn ngữ</label>
+          <select id="langSelect" class="lang-select" aria-label="Chọn ngôn ngữ">
+            <option value="vi" selected>Tiếng Việt</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="actions" role="toolbar" aria-label="Hành động">
+        <!-- Existing button kept but visually on left-panel -->
+        <button id="toggleRotateBtn" class="btn secondary" title="Bật/Tắt xoay tự động" aria-label="Bật/Tắt xoay tự động" data-i18n-key="toggleRotate">Tắt xoay tự động</button>
+        <!-- overlay/electron toggle buttons (if created by sketch.js they will be appended into #ui .actions) -->
       </div>
     </div>
 
-    <div class="actions" role="toolbar" aria-label="Hành động">
-      <button id="toggleRotateBtn" class="btn secondary" title="Bật/Tắt xoay tự động" aria-label="Bật/Tắt xoay tự động" data-i18n-key="toggleRotate">Tắt xoay tự động</button>
-      <!-- overlay / electron toggle buttons may be created by sketch.js if missing. -->
-    </div>
-  </div>
+    <!-- Right panel: inputs + orbital label -->
+    <div id="uiRight" class="panel" aria-label="Controls">
+      <div class="field">
+        <label id="nLabel" for="nInput">Số lượng tử chính (n)</label>
+        <input id="nInput" type="number" min="1" value="1" inputmode="numeric" />
+      </div>
 
-  <!-- RIGHT PANEL: numeric inputs & orbital label -->
-  <div id="uiRight" role="region" aria-label="Thông số orbital">
-    <div class="field">
-      <label id="nLabel" for="nInput">Số lượng tử chính (n)</label>
-      <input id="nInput" type="number" min="1" value="1" inputmode="numeric" />
-    </div>
+      <div class="field">
+        <label id="lLabel" for="lInput">Số lượng tử phụ (l)</label>
+        <input id="lInput" type="number" min="0" value="0" inputmode="numeric" />
+      </div>
 
-    <div class="field">
-      <label id="lLabel" for="lInput">Số lượng tử phụ (l)</label>
-      <input id="lInput" type="number" min="0" value="0" inputmode="numeric" />
-    </div>
+      <div class="field">
+        <label id="mLabel" for="mInput">Số lượng tử từ (m<sub>l</sub>)</label>
+        <input id="mInput" type="number" value="0" inputmode="numeric" />
+      </div>
 
-    <div class="field">
-      <label id="mLabel" for="mInput">Số lượng tử từ (m<sub>l</sub>)</label>
-      <input id="mInput" type="number" value="0" inputmode="numeric" />
-    </div>
+      <div class="field">
+        <label id="electronSizeLabel" for="electronSizeInput">Kích thước electron</label>
+        <input id="electronSizeInput" type="number" min="0.1" step="0.1" value="1" inputmode="numeric" />
+      </div>
 
-    <div class="field">
-      <label id="electronSizeLabel" for="electronSizeInput">Kích thước electron</label>
-      <input id="electronSizeInput" type="number" min="0.1" step="0.1" value="1" inputmode="numeric" />
-    </div>
+      <div class="field">
+        <label id="numPointsLabel" for="numElectronsInput">Số điểm</label>
+        <!-- allow 0 as a valid sentinel to turn off electrons & overlay -->
+        <input id="numElectronsInput" type="number" min="0" max="2000000" value="5000" inputmode="numeric" />
+      </div>
 
-    <div class="field">
-      <label id="numPointsLabel" for="numElectronsInput">Số điểm</label>
-      <!-- allow 0 as a valid sentinel to turn off electrons & overlay -->
-      <input id="numElectronsInput" type="number" min="0" max="2000000" value="5000" inputmode="numeric" />
-    </div>
-
-    <div class="actions" role="toolbar" aria-label="Hành động">
-      <!-- orbital label placed in the right panel -->
-      <div id="orbitalLabel" aria-live="polite">Orbital: 1s</div>
+      <div class="actions" style="align-items:flex-end;">
+        <div id="orbitalLabel" aria-live="polite">Orbital: 1s</div>
+      </div>
     </div>
   </div>
 
@@ -370,13 +388,19 @@
       if (isNaN(l)) return 'unknown';
       if (isNaN(m) || Math.abs(m) > l) return 'invalid';
       if (!isNaN(n) && (l < 0 || l >= n)) return 'invalid';
+
+      // l = 0 -> s
       if (l === 0) return 's';
+
+      // l = 1 -> p: mapping px/pz/py for m = 1/0/-1 to match earlier UI
       if (l === 1) {
         if (m === 0) return 'p<sub>z</sub>';
         if (m === 1) return 'p<sub>x</sub>';
         if (m === -1) return 'p<sub>y</sub>';
         return 'p';
       }
+
+      // l = 2 -> d: explicit mapping
       if (l === 2) {
         if (m === 0) return 'd<sub>z<sup>2</sup></sub>';
         if (m === 1) return 'd<sub>xz</sub>';
@@ -385,10 +409,47 @@
         if (m === -2) return 'd<sub>xy</sub>';
         return 'd';
       }
+
+      // l = 3 -> f (map common real combinations)
+      if (l === 3) {
+        switch (m) {
+          case 0: return 'f<sub>z<sup>3</sup></sub>';          // fz3
+          case 1: return 'f<sub>xz<sup>2</sup></sub>';        // fxz2
+          case -1: return 'f<sub>yz<sup>2</sup></sub>';       // fyz2
+          case 2: return 'f<sub>x<sup>2</sup>z</sub>';        // fx2z
+          case -2: return 'f<sub>y<sup>2</sup>z</sub>';       // fy2z
+          case 3: return 'f<sub>x<sup>3</sup></sub>';         // fx3
+          case -3: return 'f<sub>y<sup>3</sup></sub>';        // fy3
+          default: return 'f';
+        }
+      }
+
+      // l = 4 -> g (map typical component-like names)
+      if (l === 4) {
+        switch (m) {
+          case 0: return 'g<sub>z<sup>4</sup></sub>';
+          case 1: return 'g<sub>xz<sup>3</sup></sub>';
+          case -1: return 'g<sub>yz<sup>3</sup></sub>';
+          case 2: return 'g<sub>x<sup>2</sup>z<sup>2</sup></sub>';
+          case -2: return 'g<sub>y<sup>2</sup>z<sup>2</sup></sub>';
+          case 3: return 'g<sub>x<sup>3</sup>z</sub>';
+          case -3: return 'g<sub>y<sup>3</sup>z</sub>';
+          case 4: return 'g<sub>x<sup>4</sup></sub>';
+          case -4: return 'g<sub>y<sup>4</sup></sub>';
+          default: return 'g';
+        }
+      }
+
+      // For higher l (>=5) provide a reasonable component-like label if possible,
+      // otherwise fall back to single-letter shell name (f/g/h/...).
       const letters = ['s','p','d','f','g','h','i','k','l','m','n','o'];
       const letter = letters[l] || `l${l}`;
-      if (m === 0) return `${letter}`;
-      return `${letter}<sub>${m}</sub>`;
+      // try to return letter with m when it's small; otherwise only letter
+      if (Math.abs(m) <= 4) {
+        // generic pattern: letter<sub>m</sub>
+        return `${letter}<sub>${m}</sub>`;
+      }
+      return `${letter}`;
     }
 
     (function(){
@@ -508,8 +569,8 @@
         langSelect.title = t.langSelectTitle;
         langHiddenLabel.textContent = t.langHiddenLabel;
         if (uiRegion) uiRegion.setAttribute('aria-label', t.controlsRegion || 'Controls');
-        const actionsToolbar = document.querySelectorAll('.actions');
-        actionsToolbar.forEach(at => { if (at) at.setAttribute('aria-label', t.actionsToolbarLabel || 'Actions'); });
+        const actionsToolbar = document.querySelector('#uiLeft .actions');
+        if (actionsToolbar) actionsToolbar.setAttribute('aria-label', t.actionsToolbarLabel || 'Actions');
         langSelect.value = currentLang === 'en' ? 'en' : 'vi';
         document.documentElement.lang = currentLang === 'en' ? 'en' : 'vi';
         refreshLabel();
@@ -601,8 +662,11 @@
           if (el === lEl) updateConstraintsFromL();
           refreshLabel();
         });
-        // NOTE: removed 'change' handler here to avoid blur-triggered scheduling (clicking canvas caused blur -> change)
-        // Keeping only 'input' and keyup handlers for immediate UX without triggering on canvas clicks.
+        el.addEventListener('change', () => {
+          if (el === nEl) updateConstraintsFromN();
+          if (el === lEl) updateConstraintsFromL();
+          refreshLabel();
+        });
       });
 
       // We no longer force >=1 here — sketch.js will handle 0 logic centrally.
@@ -632,8 +696,6 @@
         localStorage.setItem('orbital_lang', currentLang);
         initLangSelect();
         applyTranslations();
-        // ensure select loses focus to revert color/styling and avoid leaving a dark label visible
-        try { langSelect.blur(); } catch (e) {}
       });
 
       initLangSelect();

@@ -59,13 +59,19 @@ select.lang-select option:focus {
 
 /* Right panel override if needed */
 #uiRight {
-  /* keep minimal here; most styling is inline in index.html, but ensure compatibility */
+  /* most styling is inline in index.html, but ensure compatibility */
+}
+
+/* Make sure left-panel buttons get nicer hover transition (additional safety) */
+#uiLeft .btn:hover, #uiLeft .btn:focus {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.45);
 }
 
 /* Mobile adjustments */
 @media (max-width:480px){
-  #ui { width: calc(50% - 16px); left: 8px; top: 8px; padding: 10px; }
-  #uiRight { width: calc(50% - 16px); right: 8px; top: 8px; padding: 10px; }
+  #ui { width: calc(100% - 16px); left: 8px; top: 8px; padding: 10px; }
+  #uiRight { width: calc(100% - 16px); right: 8px; top: 8px; padding: 10px; }
   #ui .btn, #ui input[type="number"] { width: calc(100% - 40px); }
   .select-wrap { width: calc(100% - 40px); }
 }

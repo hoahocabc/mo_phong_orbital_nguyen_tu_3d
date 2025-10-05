@@ -1,17 +1,15 @@
 /* sketch.js
    Full p5.js sketch for Orbital 3D visualization.
-   - Complete, self-contained file (save as sketch.js).
-   - Handles UI inputs from index.html, chunked sampling, rendering, overlays, and interaction.
-   - Special behaviors:
-     * numElectrons = 0: no sampling; electron/overlay flags preserved but nothing is drawn.
-     * Overlay and Electron toggles are independent and persistent until user toggles them.
-     * Auto-rotate toggle exposed and updates UI label via window.updateToggleRotateText().
-     * Avoid repeated fit/zoom when inputs unchanged (lastUIHash).
-     * Fix rrrz -> rrz typo and various guards to avoid runtime errors.
-   Changes in this version (responsiveness fixes):
-    - ORBITAL_UPDATE_DELAY decreased to make updates feel snappier.
-    - setupUI: ensure native 'input' event listener is attached (covers browsers where p5.Element.input may not fire).
-    - inputChangedHandler now triggers immediate orbital label refresh via window.refreshOrbitalLabel() so labels update in real time.
+
+   Change in this version:
+   - For non-dz2 d overlays (overlayCache.type === 'd'), push each lobe outward along its axis
+     by an axial offset proportional to its computed axial extent (t95). The size, color, direction,
+     and position/orientation logic are preserved; only the axial offset used when rendering is changed.
+   - dz2 overlays remain unchanged.
+   - Reduced axial push multiplier to make non-dz2 d overlays sit slightly closer to the nucleus
+     compared to the previous version (D_OVERLAY_AXIAL_PUSH_MULT = 0.12).
+   - Added: maximum electron cap (30000) and UI "max" label when hit.
+   - Removed: near/far per-electron size effect (for performance) — electrons now use a fixed size again.
 */
 
 'use strict';
@@ -90,7 +88,7 @@ let electronBtn = null;
 let showElectrons = true;
 
 let orbitalUpdateTimer = null;
-/* Reduce debounce to make updates feel more real-time while still avoiding floods */
+/* Reduce debounce to make updates feel snappier while still avoiding floods */
 const ORBITAL_UPDATE_DELAY = 150;
 
 let currentSamplingId = 0;
@@ -128,7 +126,29 @@ const RING_DETAIL_V = 32;
 const D_RADIAL_SHRINK_FACTOR = 0.80;
 let D_DX2Y2_RADIAL_CANON = null;
 
-/* ---------- preload shaders ---------- */
+/* ---------- overlay rendering shrink factors ----------
+   s/p overlays default scaling (kept if used elsewhere)
+*/
+const OVERLAY_SCALE = 0.90;
+
+/* ---------- Additional parameter for pushing non-dz2 d-overlays ----------
+   This multiplier determines how far (along each lobe's axis) the overlay
+   is translated outward relative to the lobe's axial extent (t95).
+   Reduced from previous 0.25 to 0.12 so lobes sit slightly closer to nucleus.
+*/
+const D_OVERLAY_AXIAL_PUSH_MULT = 0.12;
+
+/* ---------- New parameter for slightly pulling dz2 oval lobes closer ----------
+   This multiplier is applied only at render time for dz2 overlays to nudge
+   the two oval lobes a bit closer to the nucleus (without changing their size,
+   color, or orientation). Value in (0,1] where 1.0 = no change.
+*/
+const DZ2_OVERLAY_AXIAL_PULL_MULT = 0.85;
+
+/* ---------- new constants for electron UI behavior ---------- */
+const MAX_ELECTRONS = 30000;
+
+ /* ---------- preload shaders ---------- */
 function preload() {
   _nucleusVertSrc = `
   precision highp float;
@@ -350,6 +370,32 @@ function setupUI() {
   overlayBtn = select('#toggleOverlayBtn');
   electronBtn = select('#toggleElectronsBtn');
 
+  // helper to manage "max" label for #electrons
+  function updateNumElectronsMaxLabel(ne) {
+    if (!ui.numElectronsInput || !ui.numElectronsInput.elt) return;
+    let span = select('#numElectronsMaxLabel');
+    if (!span) {
+      try {
+        span = createSpan('');
+        span.id('numElectronsMaxLabel');
+        span.style('margin-left', '6px');
+        // try to insert after the input element
+        const parent = ui.numElectronsInput.elt.parentNode;
+        if (parent) {
+          if (ui.numElectronsInput.elt.nextSibling) parent.insertBefore(span.elt, ui.numElectronsInput.elt.nextSibling);
+          else parent.appendChild(span.elt);
+        } else {
+          // fallback: append to body
+          document.body.appendChild(span.elt);
+        }
+      } catch (e) { return; }
+    }
+    try {
+      if (typeof ne === 'number' && ne >= MAX_ELECTRONS) span.html('max');
+      else span.html('');
+    } catch (e) {}
+  }
+
   function onNumChanged(ne) {
     // Do not modify overlayEnabled or showElectrons flags.
     // If ne == 0 we clear sampled positions and overlayCache so nothing renders,
@@ -362,8 +408,16 @@ function setupUI() {
       sampleTarget = 0;
       sampling = false;
       overlayCache = null;
+      updateNumElectronsMaxLabel(ne);
       // do not show status message
     } else {
+      // clamp to MAX_ELECTRONS visually
+      if (ne >= MAX_ELECTRONS) {
+        try {
+          if (ui.numElectronsInput) ui.numElectronsInput.value(MAX_ELECTRONS);
+        } catch (e) {}
+        updateNumElectronsMaxLabel(MAX_ELECTRONS);
+      } else updateNumElectronsMaxLabel(ne);
       // when >0 and overlayEnabled is true, compute overlay after sampling finishes
     }
   }
@@ -389,6 +443,7 @@ function setupUI() {
     if (ui.numElectronsInput) {
       let ne = parseInt(ui.numElectronsInput.value(), 10);
       if (isNaN(ne) || ne < 0) { ne = 0; ui.numElectronsInput.value(ne); }
+      if (ne > MAX_ELECTRONS) { ne = MAX_ELECTRONS; ui.numElectronsInput.value(ne); }
       onNumChanged(ne);
     }
 
@@ -412,6 +467,7 @@ function setupUI() {
       // Native listener (guaranteed to exist for <input> elements)
       try {
         if (el.elt && el.elt.addEventListener) {
+          // IMPORTANT: attach 'input' only, DO NOT attach 'change' to avoid blur->change resample
           el.elt.addEventListener('input', inputChangedHandler, { passive: true });
           // keyup still useful for catching certain edit actions
           el.elt.addEventListener('keyup', (ev) => {
@@ -439,8 +495,16 @@ function setupUI() {
     overlayBtn.elt.setAttribute('aria-pressed', overlayEnabled ? 'true' : 'false');
     overlayBtn.elt.classList.add('btn', 'secondary');
     overlayBtn.style('margin-top', '8px');
-    const container = select('.actions') || select('#ui');
-    if (container && container.elt) container.elt.appendChild(overlayBtn.elt);
+
+    // IMPORTANT: append INTO LEFT panel actions container to preserve your original left/right layout.
+    const leftContainer = select('#ui .actions') || select('#ui');
+    if (leftContainer && leftContainer.elt) leftContainer.elt.appendChild(overlayBtn.elt);
+    else {
+      // conservative fallback to earlier behavior (global .actions)
+      const container = select('.actions') || select('#ui');
+      if (container && container.elt) container.elt.appendChild(overlayBtn.elt);
+    }
+
     try { if (typeof window.localizeNewElement === 'function') window.localizeNewElement(overlayBtn); } catch (e) {}
   } else {
     try { overlayBtn.elt.classList.add('btn', 'secondary'); } catch (e) {}
@@ -455,12 +519,23 @@ function setupUI() {
     electronBtn.elt.setAttribute('aria-pressed', showElectrons ? 'true' : 'false');
     electronBtn.elt.classList.add('btn', 'secondary');
     electronBtn.style('margin-top', '6px');
-    if (overlayBtn && overlayBtn.elt && overlayBtn.elt.parentNode) {
-      overlayBtn.elt.insertAdjacentElement('afterend', electronBtn.elt);
+
+    // Append to left panel actions (preserve layout)
+    const leftContainer = select('#ui .actions') || select('#ui');
+    if (leftContainer && leftContainer.elt) {
+      // if overlayBtn exists and is in left container, insert after it for consistent order
+      try {
+        if (overlayBtn && overlayBtn.elt && overlayBtn.elt.parentNode === leftContainer.elt) {
+          overlayBtn.elt.insertAdjacentElement('afterend', electronBtn.elt);
+        } else {
+          leftContainer.elt.appendChild(electronBtn.elt);
+        }
+      } catch (e) { leftContainer.elt.appendChild(electronBtn.elt); }
     } else {
       const container = select('.actions') || select('#ui');
       if (container && container.elt) container.elt.appendChild(electronBtn.elt);
     }
+
     try { if (typeof window.localizeNewElement === 'function') window.localizeNewElement(electronBtn); } catch (e) {}
   } else {
     try { electronBtn.elt.classList.add('btn', 'secondary'); } catch (e) {}
@@ -493,7 +568,7 @@ function setupUI() {
 
   // update overlay button 'supported' visual depending on l (but do not change state)
   function updateOverlayButtonState() {
-    const l = ui.lInput ? int(ui.lInput.value()) : 0;
+    const l = ui.lInput ? parseInt(ui.lInput.value(), 10) : 0;
     if (!overlayBtn) return;
     if (l >= 0 && l <= 2) {
       overlayBtn.style('opacity', '1.0');
@@ -522,6 +597,12 @@ function setupUI() {
 
   // ensure rotate button label is synced using updateToggleRotateText exposed by index.html
   try { if (typeof window.updateToggleRotateText === 'function') window.updateToggleRotateText(); } catch (e) {}
+
+  // initial label update for max (if UI already populated)
+  try {
+    const initialNe = ui.numElectronsInput ? parseInt(ui.numElectronsInput.value(), 10) : 0;
+    if (!isNaN(initialNe)) updateNumElectronsMaxLabel(initialNe);
+  } catch (e) {}
 }
 
 /* ---------- helper math / clustering ---------- */
@@ -624,7 +705,10 @@ function drawLobeEllipsoid(axisVec, axialLen, radialRadius, fillColor, opacity =
   pop();
 }
 
-/* ---------- pushElectronsOutward ---------- */
+/* ---------- pushElectronsOutward (FIXED) ----------
+   Preserve full 3D direction when expanding points to avoid creating
+   an artificial empty cylinder along the Z axis.
+*/
 function pushElectronsOutward(globalFactor = GLOBAL_RADIAL_PUSH, equatorialFactor = EQ_RADIAL_PUSH, applyNearMultiplier = false, nearMultiplier = NEAR_NUCLEAR_PUSH_MULT, nearThresholdParam = null, nearEquatorialThresholdParam = null) {
   if (!positions || sampleCount <= 0) return;
 
@@ -641,6 +725,8 @@ function pushElectronsOutward(globalFactor = GLOBAL_RADIAL_PUSH, equatorialFacto
   const minAllowed = NUCLEUS_RADIUS + ELECTRON_MIN_GAP;
   const nearThreshold = (typeof nearThresholdParam === 'number' && isFinite(nearThresholdParam)) ? nearThresholdParam : (minAllowed * NEAR_THRESHOLD_MULT);
   const nearEqThreshold = (typeof nearEquatorialThresholdParam === 'number' && isFinite(nearEquatorialThresholdParam)) ? nearEquatorialThresholdParam : nearThreshold;
+
+  const EPS = 1e-6;
 
   for (let i = 0; i < sampleCount; i++) {
     const idx = i * 3;
@@ -663,7 +749,9 @@ function pushElectronsOutward(globalFactor = GLOBAL_RADIAL_PUSH, equatorialFacto
     }
 
     if (applyNearMultiplier) {
-      if (r3D <= 1e-6) {
+      // Already using full-3D scaling here (keeps direction).
+      if (r3D <= EPS) {
+        // at origin: pick random direction
         const ang = random(0, TWO_PI);
         const newR = Math.max(targetMinDistance, 0.5 * factor);
         positions[idx] = Math.cos(ang) * newR;
@@ -677,18 +765,34 @@ function pushElectronsOutward(globalFactor = GLOBAL_RADIAL_PUSH, equatorialFacto
         positions[idx+2] = z * s;
       }
     } else {
-      if (rXY <= 1e-6) {
-        const ang = random(0, TWO_PI);
-        const newR = Math.max(minAllowed, 0.5 * factor);
-        positions[idx] = Math.cos(ang) * newR;
-        positions[idx+1] = Math.sin(ang) * newR;
+      // NON-applyNearMultiplier: preserve 3D direction for small rXY as well.
+      if (rXY <= EPS) {
+        // if essentially on axis, use r3D to decide
+        if (r3D <= EPS) {
+          // random direction on sphere at minAllowed radius
+          const u = random(-1, 1);
+          const theta = acos(u);
+          const phi = random(0, TWO_PI);
+          const sr = Math.sin(theta);
+          positions[idx]   = minAllowed * sr * Math.cos(phi);
+          positions[idx+1] = minAllowed * sr * Math.sin(phi);
+          positions[idx+2] = minAllowed * Math.cos(theta);
+        } else {
+          // scale full 3D vector
+          const newR3D = Math.max(minAllowed, r3D * factor);
+          const s = newR3D / r3D;
+          positions[idx] = x * s;
+          positions[idx+1] = y * s;
+          positions[idx+2] = z * s;
+        }
       } else {
-        const newR = max(minAllowed, rXY * factor);
-        const scale = newR / rXY;
-        positions[idx] = x * scale;
-        positions[idx+1] = y * scale;
+        // Previously scaled only XY; now scale full 3D vector to keep direction.
+        const newR3D = Math.max(minAllowed, r3D * factor);
+        const s = newR3D / r3D;
+        positions[idx] = x * s;
+        positions[idx+1] = y * s;
+        positions[idx+2] = z * s;
       }
-      positions[idx+2] = z;
     }
   }
 }
@@ -747,7 +851,6 @@ function computeOverlay() {
       const r95 = percentile(radialVals, 0.95);
       lobesComputed.push({ axisUnit: axisUnit, t95: Math.max(0.01, t95), r95: Math.max(0.01, r95) });
     }
-
     if (lobesComputed.length < 2) {
       const absX = [];
       const rPerpX = [];
@@ -790,7 +893,6 @@ function computeOverlay() {
       canonicalT = Math.max(0.01, canonicalT * P_PX_AXIAL_BOOST);
       canonicalR = Math.max(0.01, canonicalR * P_PX_RADIAL_BOOST);
     }
-
     const lobesFinal = [];
     for (let i=0;i<lobesComputed.length;i++){
       const axUnit = lobesComputed[i].axisUnit;
@@ -903,7 +1005,6 @@ function computeOverlay() {
         const r95 = percentile(radialVals, 0.95);
         lobesRaw.push({ axisUnit: axisUnit, t95: Math.max(4, t95), r95: Math.max(0.01, r95) });
       }
-
       if (lobesRaw.length === 0) {
         cache.type = 'd';
         cache.data = { lobes: [] };
@@ -995,9 +1096,10 @@ function draw() {
 
   // electrons
   if (showElectrons && sampleCount > 0) {
+    const baseUIVal = float((ui.electronSizeInput && ui.electronSizeInput.value()) || 1);
+
     if (sampleCount <= SPHERE_RENDER_THRESHOLD) {
       if (typeof sphereDetail === 'function') try { sphereDetail(sphereResolution); } catch (e) {}
-      const baseUIVal = float((ui.electronSizeInput && ui.electronSizeInput.value()) || 1);
       const desiredPixelBase = max(4.0, baseUIVal * 8.0);
       for (let i=0;i<sampleCount;i++){
         const idx = i*3;
@@ -1017,6 +1119,9 @@ function draw() {
         brightness *= faceMul;
         brightness = constrain(brightness, 0, 1);
 
+        // Use fixed desired pixel size (no near/far multiplier for performance)
+        const desiredPixels = desiredPixelBase;
+
         push();
         translate(x, y, z);
         noStroke();
@@ -1026,16 +1131,17 @@ function draw() {
         ambientMaterial(ambR, ambG, ambB);
         specularMaterial(Math.round(255 * brightness));
         shininess(30);
-        const worldR = worldRadiusForScreenPixels(x, y, z, desiredPixelBase);
+        const worldR = worldRadiusForScreenPixels(x, y, z, desiredPixels);
         sphere(max(0.05, worldR));
         pop();
       }
     } else {
+      // For large counts use efficient POINTS batch drawing (fixed size per frame)
       noLights();
       const base = ELECTRON_BASE_COLOR;
+      const pointSize = constrain(max(0.5, baseUIVal * 1.5), 0.5, 18);
       stroke(base[0], base[1], base[2]);
       fill(base[0], base[1], base[2]);
-      const pointSize = constrain(max(0.5, float((ui.electronSizeInput && ui.electronSizeInput.value()) || 1) * 1.5), 0.5, 18);
       strokeWeight(pointSize);
       beginShape(POINTS);
       for (let i=0;i<sampleCount;i++){
@@ -1043,6 +1149,8 @@ function draw() {
         vertex(positions[idx], positions[idx+1], positions[idx+2]);
       }
       endShape();
+      // reset strokeWeight to default
+      strokeWeight(1);
     }
   }
 
@@ -1058,8 +1166,10 @@ function draw() {
       noStroke();
       blendMode(ADD);
       try { if (typeof sphereDetail === 'function') sphereDetail(192); } catch (e) {}
+      // scale sphere radius by OVERLAY_SCALE
+      const scaledR = r95 * OVERLAY_SCALE;
       fill(DZ2_OVERLAY_COLOR[0], DZ2_OVERLAY_COLOR[1], DZ2_OVERLAY_COLOR[2], DZ2_OVERLAY_ALPHA);
-      sphere(r95);
+      sphere(scaledR);
       try { if (typeof sphereDetail === 'function') sphereDetail(sphereResolution); } catch (e) {}
       blendMode(BLEND);
       pop();
@@ -1068,10 +1178,14 @@ function draw() {
       const lobes = overlayCache.data.lobes || [];
       for (let li=0; li<lobes.length; li++) {
         const L = lobes[li];
-        push(); noLights(); drawLobeEllipsoid(L.axisUnit, Math.max(4, L.t95), Math.max(0.01, L.r95), DZ2_OVERLAY_COLOR, DZ2_OVERLAY_ALPHA, 0); pop();
+        // p overlays scaled by OVERLAY_SCALE (size preserved relative to earlier behavior)
+        const scaledAxial = Math.max(4, L.t95) * OVERLAY_SCALE;
+        const scaledRadial = Math.max(0.01, L.r95) * OVERLAY_SCALE;
+        push(); noLights(); drawLobeEllipsoid(L.axisUnit, scaledAxial, scaledRadial, DZ2_OVERLAY_COLOR, DZ2_OVERLAY_ALPHA, 0); pop();
       }
 
     } else if (overlayCache.type === 'dz2') {
+      // dz2 overlay: keep exactly as computed (no additional scaling or pushing)
       const d = overlayCache.data;
       if (d) {
         const lobeAxialPos = d.t80pos;
@@ -1080,10 +1194,15 @@ function draw() {
         const axialOffsetNeg = d.axialOffsetNeg || 0;
         const lobeRadial = d.lobeRadial;
 
+        // Apply render-time pull multiplier to the axial offsets so the two oval lobes sit slightly closer
+        // to the nucleus while preserving computed sizes, orientations, and the ring itself.
+        const renderAxialOffsetPos = axialOffsetPos * DZ2_OVERLAY_AXIAL_PULL_MULT;
+        const renderAxialOffsetNeg = axialOffsetNeg * DZ2_OVERLAY_AXIAL_PULL_MULT;
+
         push();
         noLights();
-        drawLobeEllipsoid([0,0,1], lobeAxialPos, lobeRadial, DZ2_OVERLAY_COLOR, DZ2_OVERLAY_ALPHA, axialOffsetPos);
-        drawLobeEllipsoid([0,0,-1], lobeAxialNeg, lobeRadial, DZ2_OVERLAY_COLOR, DZ2_OVERLAY_ALPHA, axialOffsetNeg);
+        drawLobeEllipsoid([0,0,1], lobeAxialPos, lobeRadial, DZ2_OVERLAY_COLOR, DZ2_OVERLAY_ALPHA, renderAxialOffsetPos);
+        drawLobeEllipsoid([0,0,-1], lobeAxialNeg, lobeRadial, DZ2_OVERLAY_COLOR, DZ2_OVERLAY_ALPHA, renderAxialOffsetNeg);
         pop();
 
         if (d.ring) {
@@ -1129,10 +1248,16 @@ function draw() {
       }
 
     } else if (overlayCache.type === 'd') {
+      // non-dz2 d overlays: keep size, color and orientation; push lobes outward along their axis
       const lobes = overlayCache.data.lobes || [];
       for (let li=0; li<lobes.length; li++) {
         const L = lobes[li];
-        push(); noLights(); drawLobeEllipsoid(L.axisUnit, Math.max(4, L.t95), Math.max(0.01, L.r95), DZ2_OVERLAY_COLOR, DZ2_OVERLAY_ALPHA, 0); pop();
+        const axialLen = Math.max(4, L.t95);
+        const radial = Math.max(0.01, L.r95);
+        // Compute an axial offset proportional to the lobe axial extent.
+        // Reduced multiplier so lobes sit slightly closer to nucleus than before.
+        const axialOffset = axialLen * D_OVERLAY_AXIAL_PUSH_MULT;
+        push(); noLights(); drawLobeEllipsoid(L.axisUnit, axialLen, radial, DZ2_OVERLAY_COLOR, DZ2_OVERLAY_ALPHA, axialOffset); pop();
       }
     }
 
@@ -1253,6 +1378,22 @@ function createOrbitalFromUI() {
   if (isNaN(electronSize) || electronSize <= 0) { electronSize = 1.0; ui.electronSizeInput.value(electronSize); }
   if (isNaN(numElectrons) || numElectrons < 0) { numElectrons = 0; ui.numElectronsInput.value(numElectrons); }
 
+  // enforce maximum and update label
+  if (numElectrons > MAX_ELECTRONS) {
+    numElectrons = MAX_ELECTRONS;
+    try { ui.numElectronsInput.value(MAX_ELECTRONS); } catch (e) {}
+    // update max label if available
+    try {
+      const span = select('#numElectronsMaxLabel');
+      if (span) span.html('max');
+    } catch (e) {}
+  } else {
+    try {
+      const span = select('#numElectronsMaxLabel');
+      if (span) span.html('');
+    } catch (e) {}
+  }
+
   if (l >= n) return;
   if (Math.abs(m) > l) return;
 
@@ -1312,7 +1453,8 @@ function sampleOrbitalChunked(n, l, m, numSamples, electronSize, samplingId, onD
     return;
   }
 
-  const k = 2 * l + 1;
+  // Use Gamma-like shape tuned to r^{2l+2} behaviour -> shape = 2*l + 3
+  const k = Math.max(1, 2 * l + 3);
   const thetaScale = (n * a0) / 2.0;
   const radialScale = radialLScale(l) * ELECTRON_DISTANCE_MULTIPLIER;
   const maxAngular = estimateMaxAngular(l, m, 500) * 1.2;
@@ -1473,7 +1615,7 @@ function drawAxes(length) {
 function fitViewToAxisLen(axisLen, immediate = false, allowZoomIn = true) {
   if (!axisLen || axisLen <= 0) return;
   const halfScreen = Math.min(windowWidth, windowHeight) * 0.5;
-  const targetZoom = constrain((halfScreen * VIEW_MARGIN) / axisLen, 0.05, 12.0);
+  const targetZoom = constrain((halfScreen * VIEW_MARGIN) / axisLen, 0.01, 40.0); // expanded zoom range
   let newTarget = targetZoom;
   if (!allowZoomIn && newTarget > camZoomTarget) newTarget = camZoomTarget;
   if (immediate) { camZoom = newTarget; camZoomTarget = newTarget; }
@@ -1529,8 +1671,8 @@ function mouseDragged(event) {
   return false;
 }
 function mouseWheel(event) {
-  camZoom *= event.delta > 0 ? 0.95 : 1.05;
-  camZoom = constrain(camZoom, 0.05, 12.0);
+  camZoom *= event.delta > 0 ? 0.95 : 1.05; // slightly faster / more responsive
+  camZoom = constrain(camZoom, 0.01, 40.0); // expanded limits
   camZoomTarget = camZoom;
   return false;
 }
