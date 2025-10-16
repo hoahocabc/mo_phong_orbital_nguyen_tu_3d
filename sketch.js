@@ -1356,6 +1356,21 @@ function setupUI() {
       }
     } catch (e) {}
   });
+
+  // Add native click/touch fallbacks for p5-created buttons to ensure robust touch behavior
+  try {
+    if (overlayBtn && overlayBtn.elt && overlayBtn.elt.addEventListener) {
+      overlayBtn.elt.addEventListener('click', (e) => { try { e.preventDefault(); e.stopPropagation(); } catch (ee) {} overlayBtn.mousePressed(); }, { passive: false });
+      overlayBtn.elt.addEventListener('touchend', (e) => { try { e.preventDefault(); e.stopPropagation(); } catch (ee) {} overlayBtn.mousePressed(); }, { passive: false });
+    }
+  } catch (e) {}
+
+  try {
+    if (electronBtn && electronBtn.elt && electronBtn.elt.addEventListener) {
+      electronBtn.elt.addEventListener('click', (e) => { try { e.preventDefault(); e.stopPropagation(); } catch (ee) {} electronBtn.mousePressed(); }, { passive: false });
+      electronBtn.elt.addEventListener('touchend', (e) => { try { e.preventDefault(); e.stopPropagation(); } catch (ee) {} electronBtn.mousePressed(); }, { passive: false });
+    }
+  } catch (e) {}
 }
 
 // ============================================
@@ -1915,7 +1930,7 @@ function pushElectronsOutward(globalFactor = GLOBAL_RADIAL_PUSH, equatorialFacto
         targetMinDistance = Math.max(minAllowed, nearThreshold);
       }
     }
-    
+
     if (applyNearMultiplier) {
       if (r3D <= EPS) {
         const ang = random(0, TWO_PI);
@@ -2484,7 +2499,6 @@ function initDisplayBuffersAfterSampling(prevPositions, prevCount, newPositions,
   displayCount = maxCount;
   displayUpdateCursor = 0;
 }
-
 function updateDisplayBuffers() {
   if ((!positionsDisplay || !alphasDisplay) && positions && sampleCount > 0) {
     initDisplayBuffersAfterSampling(positions, sampleCount, positions, sampleCount);
