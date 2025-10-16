@@ -1,77 +1,190 @@
-/* External CSS (cleaned) — minimal, non-conflicting with inline HTML styles.
-   This file intentionally avoids redefining :root variables that are defined inline
-   in index.html to prevent conflicts.
-*/
+/* ============================================
+   EXTERNAL STYLES - MINIMAL & NON-CONFLICTING
+   ============================================ */
 
-/* Button small helpers */
-.buttons { display:flex; gap:6px; }
-.buttons button {
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: linear-gradient(#222,#111);
-  color: #fff;
-  cursor: pointer;
+/* Utility Classes */
+.buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-/* Canvas rule kept minimal */
-canvas { display:block; }
+.buttons button {
+  flex: 1;
+  min-width: 100px;
+}
 
-/* Axis label (avoid extremely high z-index to not hide status/UI) */
+/* Canvas Override (if needed) */
+canvas {
+  display: block;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Axis Labels - 3D Billboard */
 .axis-label {
   position: absolute;
   top: 0;
   left: 0;
   z-index: 10002;
-  color: #ffffff;
-  font-family: Inter, Arial, sans-serif;
-  font-size: 16px;
+  
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 4px 10px;
+  
+  color: #ffffff; /* changed: axis labels (x/y/z) set to white */
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 15px;
+  font-weight: 700;
   text-align: center;
+  
   pointer-events: none;
   transform: translate(-50%, -50%);
   white-space: nowrap;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 2px 4px;
+  
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Language select behavior coordination with inline styles:
-   - Closed: black background, white text (handled inline).
-   - Option list: white background, dark text (this helps when dropdown opens).
-   - Hovered option: blue background + white text.
-*/
-select.lang-select {
-  /* minimal override; main behavior set inline */
+/* Select Dropdown Enhanced */
+select.lang-select,
+select.mode-select {
   -webkit-text-fill-color: unset;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-transform: none; /* ensure not forced uppercase */
 }
 
-select.lang-select option,
-select.lang-select optgroup {
-  color: #042027 !important;
-  background-color: #ffffff !important;
+select option {
+  background: #1a1a1a !important;
+  color: #ffffff !important;
+  padding: 8px 12px;
 }
 
-select.lang-select option:hover,
-select.lang-select option:focus {
-  background-color: #0a6fb3 !important;
+select option:hover,
+select option:checked {
+  background: linear-gradient(135deg, #0078d4 0%, #00a3ff 100%) !important;
   color: #ffffff !important;
 }
 
-/* Right panel override if needed */
-#uiRight {
-  /* most styling is inline in index.html, but ensure compatibility */
+/* Button Hover States Enhancement */
+#uiLeft .btn:hover,
+#uiLeft .btn:focus {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(0, 120, 212, 0.4),
+              0 0 30px rgba(100, 180, 255, 0.2);
 }
 
-/* Make sure left-panel buttons get nicer hover transition (additional safety) */
-#uiLeft .btn:hover, #uiLeft .btn:focus {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+#uiLeft .btn:active {
+  transform: translateY(-1px) scale(1.01);
 }
 
-/* Mobile adjustments */
-@media (max-width:480px){
-  #ui { width: calc(100% - 16px); left: 8px; top: 8px; padding: 10px; }
-  #uiRight { width: calc(100% - 16px); right: 8px; top: 8px; padding: 10px; }
-  #ui .btn, #ui input[type="number"] { width: calc(100% - 40px); }
-  .select-wrap { width: calc(100% - 40px); }
+/* Input Focus Enhancement */
+input:focus,
+select:focus {
+  box-shadow: 0 0 0 4px rgba(100, 180, 255, 0.15),
+              0 4px 12px rgba(0, 120, 212, 0.3);
+}
+
+/* Disabled State */
+#uiLeft .btn.disabled,
+#uiLeft .btn:disabled {
+  opacity: 0.4;
+  background: rgba(100, 100, 100, 0.3);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .panel {
+    backdrop-filter: blur(15px) saturate(160%);
+    -webkit-backdrop-filter: blur(15px) saturate(160%);
+  }
+  
+  #ui {
+    left: 10px;
+    right: 10px;
+    top: 10px;
+  }
+  
+  .btn {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(100, 180, 255, 0.3);
+  }
+}
+
+@media (max-width: 480px) {
+  .axis-label {
+    font-size: 13px;
+    padding: 3px 8px;
+  }
+  
+  .panel {
+    padding: 10px;
+    border-radius: 10px;
+  }
+}
+
+/* Dark Mode Specific */
+@media (prefers-color-scheme: dark) {
+  select option {
+    background: #0a0a0a !important;
+  }
+}
+
+/* High Performance GPU Hint */
+.panel,
+.btn,
+input,
+select,
+#orbitalLabel {
+  will-change: transform;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Smooth Scrolling (if panels overflow) */
+.panel {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 180, 255, 0.3) transparent;
+}
+
+.panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel::-webkit-scrollbar-thumb {
+  background: rgba(100, 180, 255, 0.3);
+  border-radius: 3px;
+}
+
+.panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 180, 255, 0.5);
+}
+
+/* Ensure orbital label doesn't look like a clickable control */
+#orbitalLabel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0.15rem 0.5rem !important;
+  text-transform: none !important;
+  cursor: default !important;
+  pointer-events: none !important;
 }

@@ -2,477 +2,874 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Orbital 3D — Billboard labels</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>Orbital 3D — Advanced Quantum Visualization</title>
 
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  
+  <!-- Google Fonts - Optimized -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 
   <style>
-    html, body { height: 100%; margin: 0; background: #111; color: #fff; font-family: Inter, Arial, sans-serif; }
-    body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-    canvas { display:block; }
+    /* ============================================
+       MODERN SCIENTIFIC DESIGN SYSTEM
+       ============================================ */
+    
+    :root {
+      /* Color Palette - Quantum Science Theme */
+      --color-bg-primary: #0a0a0a;
+      --color-bg-secondary: #121212;
+      --color-surface: rgba(255, 255, 255, 0.03);
+      --color-surface-hover: rgba(255, 255, 255, 0.06);
+      --color-border: rgba(255, 255, 255, 0.08);
+      --color-border-focus: rgba(100, 180, 255, 0.4);
+      
+      --color-text-primary: #ffffff;
+      --color-text-secondary: #b8c5d0;
+      --color-text-tertiary: #7a8a99;
+      --color-text-accent: #64b4ff;
+      
+      --color-accent-primary: #0078d4;
+      --color-accent-hover: #1a86e0;
+      --color-accent-active: #005a9e;
+      
+      --color-quantum-glow: rgba(100, 180, 255, 0.15);
+      --color-success: #4caf50;
+      --color-warning: #ff9800;
+      
+      /* Gradients */
+      --gradient-primary: linear-gradient(135deg, #0078d4 0%, #00a3ff 100%);
+      --gradient-surface: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+      --gradient-border: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03));
+      
+      /* Spacing & Sizing */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 12px;
+      --space-lg: 16px;
+      --space-xl: 24px;
+      
+      --field-width: 180px;
+      --field-height: 36px;
+      --field-font-size: 14px;
+      
+      --border-radius-sm: 6px;
+      --border-radius-md: 10px;
+      --border-radius-lg: 14px;
+      
+      /* Shadows */
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+      --shadow-glow: 0 0 20px var(--color-quantum-glow);
+      
+      /* Transitions */
+      --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
-    /* Top panels container: empty shell, contains two panels left/right */
+    /* ============================================
+       BASE STYLES
+       ============================================ */
+    
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: var(--color-bg-primary);
+      color: var(--color-text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+    
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    /* ============================================
+       GLASSMORPHISM PANELS
+       ============================================ */
+    
+    .panel {
+      background: var(--gradient-surface);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-lg);
+      padding: var(--space-lg);
+      box-shadow: var(--shadow-lg);
+      transition: all var(--transition-normal);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--gradient-border);
+      opacity: 0.6;
+    }
+    
+    .panel:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: var(--shadow-lg), var(--shadow-glow);
+    }
+
+    /* ============================================
+       LAYOUT
+       ============================================ */
+    
     #ui {
       position: fixed;
-      left: 12px;
-      right: 12px;
-      top: 12px;
+      left: var(--space-lg);
+      right: var(--space-lg);
+      top: var(--space-lg);
       display: flex;
       justify-content: space-between;
-      pointer-events: none; /* let inner panels control pointer events */
-      z-index: 10003; /* Ensure UI sits above canvas */
+      gap: var(--space-lg);
+      pointer-events: none;
+      z-index: 10003;
     }
-
-    /* Panel (used for both left and right); pointer-events enabled */
-    .panel {
+    
+    #uiLeft, #uiRight {
       pointer-events: auto;
-      background: rgba(0,0,0,0.55);
-      padding: 12px;
-      border-radius: 8px;
-      box-sizing: border-box;
-      color: #fff;
-      box-shadow: 0 8px 22px rgba(0,0,0,0.6);
-      min-width: 120px;
-      max-width: 48%;
+      min-width: 160px;
+      max-width: 280px;
+      animation: slideInPanel 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-
-    /* Left (buttons) should size to content and not expand too wide */
+    
     #uiLeft {
-      min-width: 120px;
-      max-width: 46%;
-      width: auto;
+      flex-shrink: 0;
     }
-
-    /* Right (inputs & orbital label) stays compact and aligned to right */
+    
     #uiRight {
-      min-width: 180px;
-      max-width: 56%;
-      width: auto;
       text-align: right;
     }
+    
+    @keyframes slideInPanel {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
+    /* ============================================
+       HERO TITLE
+       ============================================ */
+    
     #heroTitle {
-      position: absolute;
-      top: 12px;
+      position: fixed;
+      top: var(--space-lg);
       left: 50%;
       transform: translateX(-50%);
       z-index: 10004;
-      color: #ffffff;
+      pointer-events: none;
+      text-align: center;
+    }
+    
+    .hero-content {
+      background: var(--gradient-surface);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-md);
+      padding: var(--space-sm) var(--space-xl);
+      box-shadow: var(--shadow-md);
+      display: inline-block;
+    }
+    
+    .hero-title {
       font-weight: 800;
       font-size: 18px;
+      letter-spacing: 0.5px;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0;
+      text-transform: none;
+    }
+    
+    .hero-subtitle {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-text-tertiary);
+      margin: 2px 0 0 0;
       letter-spacing: 1px;
-      text-transform: uppercase;
-      pointer-events: none;
-      text-align: center;
+      text-transform: none;
     }
 
+    /* ============================================
+       FOOTER
+       ============================================ */
+    
     #footerCredit {
-      position: absolute;
-      bottom: 12px;
+      position: fixed;
+      bottom: var(--space-lg);
       left: 50%;
       transform: translateX(-50%);
       z-index: 10004;
-      color: #e6f0fb;
-      font-weight: 700;
-      font-size: 13px;
       pointer-events: none;
-      text-align: center;
+      
+      background: var(--gradient-surface);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-md);
+      padding: var(--space-xs) var(--space-lg);
+      box-shadow: var(--shadow-md);
+      
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-text-secondary);
+      letter-spacing: 0.5px;
     }
 
-    #uiHeader {
-      display:flex;
-      justify-content: flex-end;
-      margin-bottom: 8px;
-      gap: 8px;
-      align-items: center;
-    }
-
+    /* ============================================
+       FORM ELEMENTS
+       ============================================ */
+    
     .field {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      margin-bottom: 8px;
+      gap: var(--space-xs);
+      margin-bottom: var(--space-md);
       align-items: flex-end;
     }
-
+    
+    /* Labels: first letter capitalized in translations; keep styling neutral */
     #ui label {
-      font-size: 13px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      letter-spacing: 0.3px;
+      text-transform: none;
       margin: 0;
-      color: #e6f0fb;
-      white-space: nowrap;
-      display: block;
-      text-align: left;
+      transition: color var(--transition-fast);
     }
-
-    :root {
-      --field-width: 160px;
-      --field-height: 28px;
-      --field-font-size: 14px;
+    
+    .field:hover label,
+    .field:focus-within label {
+      color: var(--color-text-accent);
     }
-
-    /* Inputs and selects (right panel) keep the controlled width variable */
-    #uiRight input[type="number"], #uiRight input[type="text"], #uiRight select {
+    
+    /* Inputs */
+    input[type="number"],
+    input[type="text"] {
       width: var(--field-width);
       height: var(--field-height);
-      padding: 3px 10px;
-      border-radius: 6px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.03);
-      color: #fff;
+      padding: 0 var(--space-md);
+      
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-sm);
+      
+      color: var(--color-text-primary);
       font-size: var(--field-font-size);
-      box-sizing: border-box;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-weight: 500;
+      
       outline: none;
-      transition: box-shadow .12s ease, border-color .12s ease, filter .08s ease;
-      display: inline-block;
-      line-height: 1;
+      transition: all var(--transition-fast);
     }
-
+    
+    input:hover {
+      background: var(--color-surface-hover);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+    
+    input:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--color-border-focus);
+      box-shadow: 0 0 0 3px rgba(100, 180, 255, 0.1);
+    }
+    
+    /* Select Dropdown */
     .select-wrap {
       position: relative;
       width: var(--field-width);
       height: var(--field-height);
-      display: inline-block;
     }
-    /* DEFAULT: closed state -> black background, white text */
-    select.lang-select {
+    
+    select {
       width: 100%;
       height: 100%;
-      border-radius: 6px;
-      border: 1px solid rgba(0,0,0,0.08);
-      background: #000000;      /* closed background = black */
-      color: #ffffff;           /* closed text = white */
-      font-weight: 700;
-      padding: 0 34px 0 12px;
-      box-sizing: border-box;
+      padding: 0 36px 0 var(--space-md);
+      
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-sm);
+      
+      color: var(--color-text-primary);
+      font-size: var(--field-font-size);
+      font-weight: 600;
+      
+      cursor: pointer;
+      outline: none;
+      appearance: none;
       -webkit-appearance: none;
       -moz-appearance: none;
-      appearance: none;
-      cursor: pointer;
-      -webkit-text-fill-color: #ffffff;
+      
+      transition: all var(--transition-fast);
     }
+    
+    select:hover {
+      background: rgba(30, 30, 30, 1);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+    
+    select:focus {
+      background: rgba(40, 40, 40, 1);
+      border-color: var(--color-border-focus);
+      box-shadow: 0 0 0 3px rgba(100, 180, 255, 0.1);
+    }
+    
+    /* Select Arrow */
     .select-wrap::after {
-      content: "";
+      content: '';
       position: absolute;
-      right: 10px;
+      right: 12px;
       top: 50%;
       transform: translateY(-50%);
       width: 0;
       height: 0;
-      border-left: 6px solid transparent;
-      border-right: 6px solid transparent;
-      border-top: 6px solid #ffffff;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 5px solid var(--color-text-secondary);
       pointer-events: none;
+      transition: all var(--transition-fast);
+    }
+    
+    .select-wrap:hover::after {
+      border-top-color: var(--color-text-primary);
+    }
+    
+    select option {
+      background: #1a1a1a;
+      color: var(--color-text-primary);
+      padding: var(--space-sm);
+      text-transform: none;
+    }
+    
+    select option:hover,
+    select option:focus {
+      background: var(--color-accent-primary);
+      color: white;
     }
 
-    /* When the dropdown is focused / open in many browsers, options will be visible.
-       Ensure option styling: white background + dark text; hovered option blue + white text. */
-    select.lang-select option,
-    select.lang-select optgroup {
-      color: #042027 !important;
-      background-color: #ffffff !important;
-    }
-    /* Hover style for options (browsers vary; we include it for those honoring option hover) */
-    select.lang-select option:hover,
-    select.lang-select option:focus {
-      background-color: #0a6fb3 !important; /* blue hover */
-      color: #ffffff !important;
-    }
-
-    /* Also ensure when select has focus its caret/arrow uses dark color for visibility */
-    .select-wrap select.lang-select:focus,
-    .select-wrap select.lang-select:active {
-      color: #042027;
-      background: #ffffff;
-      -webkit-text-fill-color: #042027;
-    }
-
+    /* ============================================
+       BUTTONS
+       ============================================ */
+    
     .actions {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      margin-top: 6px;
-      align-items: flex-start;
-      position: relative;
-      z-index: 10003;
+      gap: var(--space-sm);
+      margin-top: var(--space-md);
     }
-
-    /* Ensure buttons in left panel have equal width (use same variable as inputs).
-       This guarantees equal-sized buttons while leaving other styles intact. */
-    #uiLeft .actions { align-items: stretch; }
-    #uiLeft .btn, #uiLeft .btn.secondary, #uiLeft .actions > * {
-      display: inline-flex;
+    
+    .btn {
+      display: flex;
       align-items: center;
       justify-content: center;
+      gap: var(--space-xs);
+      
       width: var(--field-width);
       height: var(--field-height);
-      padding: 0 12px;
-      border-radius: 6px;
-      border: 1px solid rgba(255,255,255,0.06);
-      background: #ffffff;
-      color: #042027;
-      cursor: pointer;
-      font-weight: 600;
+      padding: 0 var(--space-lg);
+      
+      background: var(--gradient-primary);
+      border: none;
+      border-radius: var(--border-radius-sm);
+      
+      color: white;
       font-size: var(--field-font-size);
-      box-sizing: border-box;
-      transition: transform .12s ease, box-shadow .12s ease, filter .08s ease;
-      box-shadow: none;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      position: relative;
-      z-index: 10004;
-      min-width: 0;
-      max-width: 100%;
-    }
-    /* Slightly different appearance for secondary */
-    #uiLeft .btn.secondary {
-      background: linear-gradient(#ffffff,#e9f3f8);
-      color: #042027;
-      border: 1px solid rgba(0,0,0,0.06);
-    }
-
-    /* Hover effect for accessible affordance */
-    #uiLeft .btn:hover, #uiLeft .btn:focus {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-      filter: brightness(1.03);
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: none;
+      
+      cursor: pointer;
       outline: none;
+      position: relative;
+      overflow: hidden;
+      
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-fast);
+    }
+    
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md), 0 0 20px rgba(0, 120, 212, 0.4);
+    }
+    
+    .btn:hover::before {
+      left: 100%;
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .btn.secondary {
+      background: var(--color-surface);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border);
+    }
+    
+    .btn.secondary:hover {
+      background: var(--color-surface-hover);
+      border-color: var(--color-border-focus);
+      box-shadow: var(--shadow-md), 0 0 15px rgba(100, 180, 255, 0.2);
+    }
+    
+    .btn.disabled,
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+    
+    .btn.disabled:hover::before,
+    .btn:disabled:hover::before {
+      left: -100%;
     }
 
-    /* Orbital label (move to right panel & right-align) */
+    /* ============================================
+       ORBITAL LABEL (simplified — not button-like)
+       ============================================ */
+    
     #orbitalLabel {
-      margin-top: 6px;
-      font-size: 15px;
-      color: #cfeff8;
-      line-height: 1.2;
+      margin-top: var(--space-md);
+      padding: 0.15rem 0.5rem;
+      
+      background: transparent; /* removed button-like background */
+      border: none;
+      border-radius: 4px;
+      
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--color-text-accent);
       text-align: right;
-      width: var(--field-width);
+      
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      position: relative;
-      z-index: 10005;
-      background: transparent;
-      box-sizing: border-box;
-      margin-left: auto;
+      
+      box-shadow: none; /* removed button-like shadow */
+      transition: color var(--transition-fast), transform var(--transition-fast);
+      pointer-events: none; /* not interactive */
     }
-    #orbitalLabel sub { font-size: 0.85em; vertical-align: sub; }
-    #orbitalLabel sup { font-size: 0.75em; vertical-align: super; }
+    
+    #orbitalLabel:hover {
+      color: var(--color-text-accent);
+      transform: none;
+    }
+    
+    #orbitalLabel sub,
+    #orbitalLabel sup {
+      font-size: 0.8em;
+    }
 
+    /* ============================================
+       PROGRESS & STATUS
+       ============================================ */
+    
     #progress {
-      position: absolute;
-      left: 8px;
-      top: 8px;
-      color: #fff;
-      font-size: 14px;
+      position: fixed;
+      left: var(--space-lg);
+      top: var(--space-lg);
       z-index: 10005;
       pointer-events: none;
-      background: rgba(0,0,0,0.25);
-      padding: 4px 8px;
-      border-radius: 4px;
-      display:none;
-    }
-    #status {
-      position: absolute;
-      right: 12px;
-      top: 12px;
-      background: rgba(0,0,0,0.85);
-      color: #fff;
-      padding: 8px 10px;
-      border-radius: 6px;
-      z-index: 10005;
+      
+      background: var(--gradient-surface);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-md);
+      padding: var(--space-sm) var(--space-lg);
+      box-shadow: var(--shadow-md);
+      
       font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-accent);
+      
+      display: none;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    #status {
+      position: fixed;
+      right: var(--space-lg);
+      top: var(--space-lg);
+      z-index: 10005;
+      
+      background: rgba(255, 50, 50, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 100, 100, 0.5);
+      border-radius: var(--border-radius-md);
+      padding: var(--space-md) var(--space-lg);
+      box-shadow: var(--shadow-lg);
+      
+      font-size: 13px;
+      font-weight: 600;
+      color: white;
       max-width: 360px;
       white-space: pre-wrap;
-      display:none;
+      
+      display: none;
     }
 
-    .axis-label, #xLabel, #yLabel, #zLabel {
-      font-size: 15px;
-      font-weight: 600;
-      color: #f1f8fb;
+    /* ============================================
+       AXIS LABELS
+       ============================================ */
+    
+    .axis-label {
+      position: absolute;
+      z-index: 10002;
+      
+      background: var(--gradient-surface);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-sm);
+      padding: 4px 8px;
+      
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: #ffffff; /* changed: axis labels (x/y/z) set to white */
+      text-align: center;
+      
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      white-space: nowrap;
+      
+      box-shadow: var(--shadow-sm);
     }
 
-    @media (max-width:480px){
-      :root { --field-width: calc(100% - 40px); }
-      #ui { left: 8px; right: 8px; top: 8px; }
-      .panel { padding: 10px; }
-      #ui .btn, #ui input[type="number"] { width: calc(100% - 40px); }
-      .select-wrap { width: var(--field-width); }
-      select.lang-select { width: 100%; }
-      #heroTitle { font-size: 14px; top: 8px; }
-      #footerCredit { font-size: 12px; bottom: 8px; }
-      /* stack panels vertically on very small screens */
-      #ui { flex-direction: column; gap:8px; align-items: stretch; }
-      #uiLeft, #uiRight { max-width: 100%; width: 100%; text-align: left; }
-      #orbitalLabel { text-align: left; width: auto; }
+    /* ============================================
+       RESPONSIVE DESIGN
+       ============================================ */
+    
+    @media (max-width: 768px) {
+      :root {
+        --field-width: 160px;
+        --field-height: 40px;
+        --space-lg: 12px;
+      }
+      
+      #ui {
+        flex-direction: column;
+        gap: var(--space-md);
+      }
+      
+      #uiLeft, #uiRight {
+        max-width: 100%;
+        width: 100%;
+      }
+      
+      #uiRight {
+        text-align: left;
+      }
+      
+      .field {
+        align-items: flex-start;
+      }
+      
+      #orbitalLabel {
+        text-align: left;
+      }
+      
+      .hero-title {
+        font-size: 16px;
+      }
+      
+      .hero-subtitle {
+        font-size: 10px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      :root {
+        --field-width: 100%;
+        --space-lg: 10px;
+      }
+      
+      .panel {
+        padding: var(--space-md);
+      }
+      
+      .hero-content {
+        padding: var(--space-xs) var(--space-lg);
+      }
+      
+      #footerCredit {
+        font-size: 11px;
+      }
+    }
+    
+    /* ============================================
+       PERFORMANCE OPTIMIZATIONS
+       ============================================ */
+    
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+    
+    /* GPU Acceleration */
+    .panel,
+    .btn,
+    canvas {
+      will-change: transform;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+    }
+    
+    /* Touch Optimization */
+    @media (hover: none) and (pointer: coarse) {
+      .btn,
+      input,
+      select {
+        min-height: 44px;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="heroTitle" aria-hidden="true">Mô phỏng Orbital 3D</div>
+  <!-- Hero Title -->
+  <div id="heroTitle">
+    <div class="hero-content">
+      <h1 class="hero-title">Orbital 3D Simulator</h1>
+      <p class="hero-subtitle">Quantum Visualization Engine</p>
+    </div>
+  </div>
 
-  <!-- Keep wrapper #ui for existing JS compatibility; it contains two panels -->
+  <!-- Main UI Container -->
   <div id="ui" role="region" aria-label="Điều khiển">
-    <!-- Left panel: buttons and language (keeps #uiHeader for existing scripts) -->
+    <!-- Left Panel: Actions & Language -->
     <div id="uiLeft" class="panel" aria-label="Actions panel">
       <div id="uiHeader">
-        <div class="select-wrap" aria-hidden="false">
-          <label id="langHiddenLabel" for="langSelect" style="display:none">Ngôn ngữ</label>
+        <!-- Language Select -->
+        <div class="select-wrap">
+          <label id="langHiddenLabel" for="langSelect" class="visually-hidden">Ngôn ngữ</label>
           <select id="langSelect" class="lang-select" aria-label="Chọn ngôn ngữ">
             <option value="vi" selected>Tiếng Việt</option>
             <option value="en">English</option>
           </select>
         </div>
+        
+        <!-- Mode Select -->
+        <div class="select-wrap" style="margin-top: 8px;">
+          <label id="modeHiddenLabel" for="modeSelect" class="visually-hidden">Chế độ</label>
+          <select id="modeSelect" class="mode-select" aria-label="Chọn chế độ">
+            <option value="basic" selected>Cơ bản</option>
+            <option value="complete">Đầy đủ</option>
+          </select>
+        </div>
       </div>
 
+      <!-- Action Buttons -->
       <div class="actions" role="toolbar" aria-label="Hành động">
-        <!-- Existing button kept but visually on left-panel -->
-        <button id="toggleRotateBtn" class="btn secondary" title="Bật/Tắt xoay tự động" aria-label="Bật/Tắt xoay tự động" data-i18n-key="toggleRotate">Tắt xoay tự động</button>
-        <!-- overlay/electron toggle buttons (if created by sketch.js they will be appended into #ui .actions) -->
+        <button id="toggleRotateBtn" class="btn secondary" 
+                title="Bật/tắt xoay tự động" 
+                aria-label="Bật/tắt xoay tự động" 
+                data-i18n-key="toggleRotate" data-state="on">
+          Tắt xoay tự động
+        </button>
       </div>
     </div>
 
-    <!-- Right panel: inputs + orbital label -->
+    <!-- Right Panel: Quantum Controls -->
     <div id="uiRight" class="panel" aria-label="Controls">
+      <!-- Quantum Number n -->
       <div class="field">
         <label id="nLabel" for="nInput">Số lượng tử chính (n)</label>
         <input id="nInput" type="number" min="1" value="1" inputmode="numeric" />
       </div>
 
+      <!-- Quantum Number l -->
       <div class="field">
         <label id="lLabel" for="lInput">Số lượng tử phụ (l)</label>
         <input id="lInput" type="number" min="0" value="0" inputmode="numeric" />
       </div>
 
+      <!-- Quantum Number m -->
       <div class="field">
         <label id="mLabel" for="mInput">Số lượng tử từ (m<sub>l</sub>)</label>
         <input id="mInput" type="number" value="0" inputmode="numeric" />
       </div>
 
+      <!-- Electron Size -->
       <div class="field">
         <label id="electronSizeLabel" for="electronSizeInput">Kích thước electron</label>
         <input id="electronSizeInput" type="number" min="0.1" step="0.1" value="1" inputmode="numeric" />
       </div>
 
+      <!-- Number of Points -->
       <div class="field">
         <label id="numPointsLabel" for="numElectronsInput">Số điểm</label>
-        <!-- allow 0 as a valid sentinel to turn off electrons & overlay -->
         <input id="numElectronsInput" type="number" min="0" max="2000000" value="5000" inputmode="numeric" />
       </div>
 
-      <div class="actions" style="align-items:flex-end;">
-        <div id="orbitalLabel" aria-live="polite">Orbital: 1s</div>
-      </div>
+      <!-- Orbital Label Display (no longer button-like) -->
+      <div id="orbitalLabel" aria-live="polite">Orbital: 1s</div>
     </div>
   </div>
 
-  <div id="footerCredit" aria-hidden="true">© HÓA HỌC ABC</div>
+  <!-- Footer Credit -->
+  <div id="footerCredit">© HÓA HỌC ABC</div>
 
+  <!-- Progress Indicator -->
   <div id="progress">Đang tải...</div>
+  
+  <!-- Status/Error Display -->
   <div id="status" role="status" aria-live="polite"></div>
 
-  <!-- Load p5 and sketch (deferred so initial render isn't blocked). Order preserved by defer. -->
+  <!-- p5.js Library -->
   <script defer src="https://cdn.jsdelivr.net/npm/p5@1.8.0/lib/p5.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/p5@1.8.0/lib/addons/p5.dom.min.js"></script>
+  
+  <!-- Main Sketch -->
   <script defer src="sketch.js"></script>
 
-  <!-- Localization & UI behavior script (keeps parity with sketch.js expectations) -->
+  <!-- Localization & UI Logic -->
   <script>
+    'use strict';
+    
+    // Initialize localStorage
     if (!localStorage.getItem('orbital_lang')) localStorage.setItem('orbital_lang', 'vi');
+    if (!localStorage.getItem('orbital_mode')) localStorage.setItem('orbital_mode', 'basic');
 
+    // Orbital label generator (unchanged behavior)
     function orbitalHtmlFromQuantum(n, l, m) {
-      n = parseInt(n,10); l = parseInt(l,10); m = parseInt(m,10);
+      n = parseInt(n, 10);
+      l = parseInt(l, 10);
+      m = parseInt(m, 10);
+      
       if (isNaN(l)) return 'unknown';
       if (isNaN(m) || Math.abs(m) > l) return 'invalid';
       if (!isNaN(n) && (l < 0 || l >= n)) return 'invalid';
 
-      // l = 0 -> s
+      const lLabels = ['s', 'p', 'd', 'f', 'g', 'h', 'i', 'k'];
+      const letter = lLabels[l] || `l${l}`;
+      
       if (l === 0) return 's';
-
-      // l = 1 -> p: mapping px/pz/py for m = 1/0/-1 to match earlier UI
       if (l === 1) {
-        if (m === 0) return 'p<sub>z</sub>';
-        if (m === 1) return 'p<sub>x</sub>';
-        if (m === -1) return 'p<sub>y</sub>';
-        return 'p';
+        const pMap = { '0': 'z', '1': 'x', '-1': 'y' };
+        return pMap[m] ? `p<sub>${pMap[m]}</sub>` : 'p';
       }
-
-      // l = 2 -> d: explicit mapping
       if (l === 2) {
-        if (m === 0) return 'd<sub>z<sup>2</sup></sub>';
-        if (m === 1) return 'd<sub>xz</sub>';
-        if (m === -1) return 'd<sub>yz</sub>';
-        if (m === 2) return 'd<sub>x<sup>2</sup>-y<sup>2</sup></sub>';
-        if (m === -2) return 'd<sub>xy</sub>';
-        return 'd';
+        const dMap = {
+          '0': 'z<sup>2</sup>',
+          '1': 'xz',
+          '-1': 'yz',
+          '2': 'x<sup>2</sup>-y<sup>2</sup>',
+          '-2': 'xy'
+        };
+        return dMap[m] ? `d<sub>${dMap[m]}</sub>` : 'd';
       }
-
-      // l = 3 -> f (map common real combinations)
       if (l === 3) {
-        switch (m) {
-          case 0: return 'f<sub>z<sup>3</sup></sub>';          // fz3
-          case 1: return 'f<sub>xz<sup>2</sup></sub>';        // fxz2
-          case -1: return 'f<sub>yz<sup>2</sup></sub>';       // fyz2
-          case 2: return 'f<sub>x<sup>2</sup>z</sub>';        // fx2z
-          case -2: return 'f<sub>y<sup>2</sup>z</sub>';       // fy2z
-          case 3: return 'f<sub>x<sup>3</sup></sub>';         // fx3
-          case -3: return 'f<sub>y<sup>3</sup></sub>';        // fy3
-          default: return 'f';
-        }
+        const fMap = {
+          '0': 'z<sup>3</sup>',
+          '1': 'xz<sup>2</sup>',
+          '-1': 'yz<sup>2</sup>',
+          '2': 'z(x<sup>2</sup>-y<sup>2</sup>)',
+          '-2': 'xyz',
+          '3': 'x(x<sup>2</sup>-3y<sup>2</sup>)',
+          '-3': 'y(3x<sup>2</sup>-y<sup>2</sup>)'
+        };
+        return fMap[m] ? `f<sub>${fMap[m]}</sub>` : 'f';
       }
-
-      // l = 4 -> g (map typical component-like names)
-      if (l === 4) {
-        switch (m) {
-          case 0: return 'g<sub>z<sup>4</sup></sub>';
-          case 1: return 'g<sub>xz<sup>3</sup></sub>';
-          case -1: return 'g<sub>yz<sup>3</sup></sub>';
-          case 2: return 'g<sub>x<sup>2</sup>z<sup>2</sup></sub>';
-          case -2: return 'g<sub>y<sup>2</sup>z<sup>2</sup></sub>';
-          case 3: return 'g<sub>x<sup>3</sup>z</sub>';
-          case -3: return 'g<sub>y<sup>3</sup>z</sub>';
-          case 4: return 'g<sub>x<sup>4</sup></sub>';
-          case -4: return 'g<sub>y<sup>4</sup></sub>';
-          default: return 'g';
-        }
-      }
-
-      // For higher l (>=5) provide a reasonable component-like label if possible,
-      // otherwise fall back to single-letter shell name (f/g/h/...).
-      const letters = ['s','p','d','f','g','h','i','k','l','m','n','o'];
-      const letter = letters[l] || `l${l}`;
-      // try to return letter with m when it's small; otherwise only letter
-      if (Math.abs(m) <= 4) {
-        // generic pattern: letter<sub>m</sub>
-        return `${letter}<sub>${m}</sub>`;
-      }
-      return `${letter}`;
+      
+      return Math.abs(m) <= 4 ? `${letter}<sub>${m}</sub>` : letter;
     }
 
-    (function(){
-      const langSelect = document.getElementById('langSelect');
-      const nEl = document.getElementById('nInput');
-      const lEl = document.getElementById('lInput');
-      const mEl = document.getElementById('mInput');
-      const label = document.getElementById('orbitalLabel');
-      const toggleBtn = document.getElementById('toggleRotateBtn');
-      const nLabelEl = document.getElementById('nLabel');
-      const lLabelEl = document.getElementById('lLabel');
-      const mLabelEl = document.getElementById('mLabel');
-      const electronSizeLabelEl = document.getElementById('electronSizeLabel');
-      const numPointsLabelEl = document.getElementById('numPointsLabel');
-      const uiRegion = document.getElementById('ui');
-      const langHiddenLabel = document.getElementById('langHiddenLabel');
-      const progressEl = document.getElementById('progress');
-      const statusEl = document.getElementById('status');
-      const heroTitleEl = document.getElementById('heroTitle');
+    // UI Management IIFE
+    (function() {
+      const elements = {
+        langSelect: document.getElementById('langSelect'),
+        modeSelect: document.getElementById('modeSelect'),
+        nInput: document.getElementById('nInput'),
+        lInput: document.getElementById('lInput'),
+        mInput: document.getElementById('mInput'),
+        label: document.getElementById('orbitalLabel'),
+        toggleBtn: document.getElementById('toggleRotateBtn'),
+        nLabel: document.getElementById('nLabel'),
+        lLabel: document.getElementById('lLabel'),
+        mLabel: document.getElementById('mLabel'),
+        electronSizeLabel: document.getElementById('electronSizeLabel'),
+        numPointsLabel: document.getElementById('numPointsLabel'),
+        uiRegion: document.getElementById('ui'),
+        progressEl: document.getElementById('progress'),
+        statusEl: document.getElementById('status'),
+        heroTitle: document.querySelector('.hero-title')
+      };
 
+      let currentLang = localStorage.getItem('orbital_lang') || 'vi';
+      let currentMode = localStorage.getItem('orbital_mode') || 'basic';
+      let localAutoRotate = true;
+
+      window.orbitalMode = currentMode;
+
+      // Translations (first letter capitalized where appropriate)
       const translations = {
         vi: {
           heroTitle: 'Mô phỏng Orbital 3D',
+          heroSubtitle: 'Công cụ Hóa học Lượng tử',
           nLabel: 'Số lượng tử chính (n)',
           lLabel: 'Số lượng tử phụ (l)',
           mLabel: 'Số lượng tử từ (m<sub>l</sub>)',
@@ -480,30 +877,30 @@
           numPointsLabel: 'Số điểm',
           toggleRotateOn: 'Tắt xoay tự động',
           toggleRotateOff: 'Bật xoay tự động',
-          toggleRotateOnTitle: 'Tắt chế độ xoay tự động',
-          toggleRotateOffTitle: 'Bật chế độ xoay tự động',
           toggleOverlayOn: 'Tắt lớp phủ',
           toggleOverlayOff: 'Bật lớp phủ',
-          orbitalPrefix: 'Orbital:',
-          unknownText: 'chưa xác định',
-          invalidRangeL: 'không hợp lệ (phải có 0 ≤ l ≤ n−1)',
-          invalidRangeM: 'không hợp lệ (|m| ≤ l)',
-          invalidGeneric: 'không hợp lệ',
-          langOptionText_vi: 'Tiếng Việt',
-          langOptionText_en: 'English',
-          langSelectTitle: 'Chuyển ngôn ngữ',
-          controlsRegion: 'Điều khiển',
-          langHiddenLabel: 'Ngôn ngữ',
-          progressLoading: 'Đang tải...',
-          actionsToolbarLabel: 'Hành động',
-          statusDefault: '',
           toggleElectronsOn: 'Tắt electron',
           toggleElectronsOff: 'Bật electron',
-          toggleElectronsOnTitle: 'Tắt hiển thị electron',
-          toggleElectronsOffTitle: 'Bật hiển thị electron'
+          toggleSeparateOn: 'Tắt tách orbital',
+          toggleSeparateOff: 'Bật tách orbital',
+          toggleAxesOn: 'Tắt trục tọa độ',
+          toggleAxesOff: 'Bật trục tọa độ',
+          orbitalPrefix: 'Orbital:',
+          unknownText: 'Chưa xác định',
+          invalidRangeL: 'Không hợp lệ (0 ≤ l ≤ n−1)',
+          invalidRangeM: 'Không hợp lệ (|m| ≤ l)',
+          invalidGeneric: 'Không hợp lệ',
+          progressLoading: 'Đang tải...',
+          controlsRegion: 'Điều khiển',
+          actionsToolbarLabel: 'Hành động',
+          langVi: 'Tiếng Việt',
+          langEn: 'English',
+          modeBasic: 'Cơ bản',
+          modeComplete: 'Đầy đủ'
         },
         en: {
-          heroTitle: 'Orbital 3D simulator',
+          heroTitle: 'Orbital 3D Simulator',
+          heroSubtitle: 'Quantum Chemistry Engine',
           nLabel: 'Principal quantum number (n)',
           lLabel: 'Azimuthal quantum number (l)',
           mLabel: 'Magnetic quantum number (m<sub>l</sub>)',
@@ -511,333 +908,248 @@
           numPointsLabel: 'Number of points',
           toggleRotateOn: 'Turn auto-rotate off',
           toggleRotateOff: 'Turn auto-rotate on',
-          toggleRotateOnTitle: 'Turn auto-rotate off',
-          toggleRotateOffTitle: 'Turn auto-rotate on',
           toggleOverlayOn: 'Turn overlay off',
           toggleOverlayOff: 'Turn overlay on',
-          orbitalPrefix: 'Orbital:',
-          unknownText: 'unknown',
-          invalidRangeL: 'invalid (must have 0 ≤ l ≤ n−1)',
-          invalidRangeM: 'invalid (|m| ≤ l)',
-          invalidGeneric: 'invalid',
-          langOptionText_vi: 'Tiếng Việt',
-          langOptionText_en: 'English',
-          langSelectTitle: 'Switch language',
-          controlsRegion: 'Controls',
-          langHiddenLabel: 'Language',
-          progressLoading: 'Loading...',
-          actionsToolbarLabel: 'Actions',
-          statusDefault: '',
           toggleElectronsOn: 'Turn electrons off',
           toggleElectronsOff: 'Turn electrons on',
-          toggleElectronsOnTitle: 'Turn electrons off',
-          toggleElectronsOffTitle: 'Turn electrons on'
+          toggleSeparateOn: 'Turn separation off',
+          toggleSeparateOff: 'Turn separation on',
+          toggleAxesOn: 'Turn axes off',
+          toggleAxesOff: 'Turn axes on',
+          orbitalPrefix: 'Orbital:',
+          unknownText: 'Unknown',
+          invalidRangeL: 'Invalid (0 ≤ l ≤ n−1)',
+          invalidRangeM: 'Invalid (|m| ≤ l)',
+          invalidGeneric: 'Invalid',
+          progressLoading: 'Loading...',
+          controlsRegion: 'Controls',
+          actionsToolbarLabel: 'Actions',
+          langVi: 'Tiếng Việt',
+          langEn: 'English',
+          modeBasic: 'Basic',
+          modeComplete: 'Complete'
         }
       };
 
-      let currentLang = localStorage.getItem('orbital_lang') || 'vi';
-      // localAutoRotate is only for label text sync in this closure
-      let localAutoRotate = (typeof window.autoRotate !== 'undefined') ? !!window.autoRotate : true;
-
-      function updateFieldWidth() {
-        const labels = Array.from(document.querySelectorAll('#uiRight .field > label'));
-        if (!labels.length) return;
-        labels.forEach(l => { l.style.width = ''; });
-        document.querySelectorAll('.select-wrap').forEach(sw => { sw.style.width = ''; });
-
-        let maxW = 0;
-        labels.forEach(l => {
-          const w = Math.ceil(l.scrollWidth) + 10;
-          if (w > maxW) maxW = w;
-        });
-        const newWidth = Math.max(96, maxW);
-        document.documentElement.style.setProperty('--field-width', newWidth + 'px');
-      }
-
       function applyTranslations() {
         const t = translations[currentLang] || translations.vi;
-        if (heroTitleEl) heroTitleEl.textContent = t.heroTitle || '';
-        nLabelEl.innerHTML = t.nLabel;
-        lLabelEl.innerHTML = t.lLabel;
-        mLabelEl.innerHTML = t.mLabel;
-        electronSizeLabelEl.innerHTML = t.electronSizeLabel;
-        numPointsLabelEl.innerHTML = t.numPointsLabel;
-        const viOption = langSelect.querySelector('option[value="vi"]');
-        const enOption = langSelect.querySelector('option[value="en"]');
-        if (viOption) viOption.textContent = t.langOptionText_vi;
-        if (enOption) enOption.textContent = t.langOptionText_en;
-        langSelect.title = t.langSelectTitle;
-        langHiddenLabel.textContent = t.langHiddenLabel;
-        if (uiRegion) uiRegion.setAttribute('aria-label', t.controlsRegion || 'Controls');
-        const actionsToolbar = document.querySelector('#uiLeft .actions');
-        if (actionsToolbar) actionsToolbar.setAttribute('aria-label', t.actionsToolbarLabel || 'Actions');
-        langSelect.value = currentLang === 'en' ? 'en' : 'vi';
-        document.documentElement.lang = currentLang === 'en' ? 'en' : 'vi';
+        
+        if (elements.heroTitle) elements.heroTitle.textContent = t.heroTitle;
+        elements.nLabel.innerHTML = t.nLabel;
+        elements.lLabel.innerHTML = t.lLabel;
+        elements.mLabel.innerHTML = t.mLabel;
+        elements.electronSizeLabel.innerHTML = t.electronSizeLabel;
+        elements.numPointsLabel.innerHTML = t.numPointsLabel;
+        
+        // Update select option text for language and mode so they translate on change
+        if (elements.langSelect && elements.langSelect.options) {
+          if (elements.langSelect.options.length > 0) elements.langSelect.options[0].text = t.langVi;
+          if (elements.langSelect.options.length > 1) elements.langSelect.options[1].text = t.langEn;
+          elements.langSelect.value = currentLang;
+        }
+        if (elements.modeSelect && elements.modeSelect.options) {
+          if (elements.modeSelect.options.length > 0) elements.modeSelect.options[0].text = t.modeBasic;
+          if (elements.modeSelect.options.length > 1) elements.modeSelect.options[1].text = t.modeComplete;
+          elements.modeSelect.value = currentMode;
+        }
+
+        document.documentElement.lang = currentLang;
+        
         refreshLabel();
-        if (progressEl) progressEl.textContent = t.progressLoading || '';
-        if (statusEl && !statusEl.textContent) statusEl.textContent = t.statusDefault || '';
+        
+        if (elements.progressEl) elements.progressEl.textContent = t.progressLoading;
+        if (elements.uiRegion) elements.uiRegion.setAttribute('aria-label', t.controlsRegion);
+        
         document.querySelectorAll('[data-i18n-key]').forEach(el => {
           const key = el.dataset.i18nKey;
-          if (!key) return;
           if (key === 'toggleRotate') return;
-          if (key === 'toggleOverlay') {
-            const isOn = el.dataset.state === 'on' || el.getAttribute('aria-pressed') === 'true';
-            el.textContent = isOn ? (t.toggleOverlayOn || '') : (t.toggleOverlayOff || '');
-            el.title = isOn ? (t.toggleOverlayOnTitle || el.textContent) : (t.toggleOverlayOffTitle || el.textContent);
-            el.setAttribute('aria-label', el.title);
-            return;
-          }
-          if (key === 'toggleElectrons') {
-            const isOn = el.dataset.state === 'on' || el.getAttribute('aria-pressed') === 'true';
-            el.textContent = isOn ? (t.toggleElectronsOn || '') : (t.toggleElectronsOff || '');
-            el.title = isOn ? (t.toggleElectronsOnTitle || el.textContent) : (t.toggleElectronsOffTitle || el.textContent);
-            el.setAttribute('aria-label', el.title);
-            return;
-          }
-          if (t[key]) {
-            el.textContent = t[key];
-            if (t[key + 'Title']) { el.title = t[key + 'Title']; el.setAttribute('aria-label', t[key + 'Title']); }
+          
+          const isOn = el.dataset.state === 'on' || el.getAttribute('aria-pressed') === 'true';
+          const onKey = key + 'On';
+          const offKey = key + 'Off';
+          
+          if (t[onKey] && t[offKey]) {
+            el.textContent = isOn ? t[onKey] : t[offKey];
+            el.title = el.textContent;
+            el.setAttribute('aria-label', el.textContent);
           }
         });
-        // ensure the rotate toggle reflects the current language strings
-        try { if (typeof updateToggleRotateText === 'function') updateToggleRotateText(); } catch (e) {}
-        setTimeout(updateFieldWidth, 20);
+        
+        try {
+          if (typeof updateToggleRotateText === 'function') updateToggleRotateText();
+        } catch (e) {}
       }
 
       function refreshLabel() {
-        const nRaw = nEl.value;
-        const lRaw = lEl.value;
-        const mRaw = mEl.value;
         const t = translations[currentLang] || translations.vi;
-        const obsOrb = orbitalHtmlFromQuantum(nRaw, lRaw, mRaw);
-        const nParsed = parseInt(nRaw, 10);
+        const nVal = elements.nInput.value;
+        const lVal = elements.lInput.value;
+        const mVal = elements.mInput.value;
+        
+        const obsOrb = orbitalHtmlFromQuantum(nVal, lVal, mVal);
+        const nParsed = parseInt(nVal, 10);
         const nPrefix = isNaN(nParsed) ? '?' : nParsed;
+        
         if (obsOrb === 'unknown') {
-          label.innerHTML = `${t.orbitalPrefix} ${t.unknownText}`;
-          return;
+          elements.label.innerHTML = `${t.orbitalPrefix} ${t.unknownText}`;
+        } else if (obsOrb === 'invalid') {
+          elements.label.innerHTML = `${t.orbitalPrefix} ${t.invalidGeneric}`;
+        } else {
+          elements.label.innerHTML = `${t.orbitalPrefix} ${nPrefix}${obsOrb}`;
         }
-        if (obsOrb === 'invalid') {
-          const lParsed = parseInt(lRaw, 10);
-          const mParsed = parseInt(mRaw, 10);
-          if (!isNaN(nParsed) && !isNaN(lParsed) && lParsed >= nParsed) {
-            label.innerHTML = `${t.orbitalPrefix} ${t.invalidRangeL}`;
-            return;
-          }
-          if (!isNaN(lParsed) && !isNaN(mParsed) && Math.abs(mParsed) > Math.abs(lParsed)) {
-            label.innerHTML = `${t.orbitalPrefix} ${t.invalidRangeM}`;
-            return;
-          }
-          label.innerHTML = `${t.orbitalPrefix} ${t.invalidGeneric}`;
-          return;
-        }
-        label.innerHTML = `${t.orbitalPrefix} ${nPrefix}${obsOrb}`;
       }
 
-      function updateConstraintsFromN() {
-        const nVal = parseInt(nEl.value, 10);
-        const maxL = (isNaN(nVal) ? 0 : Math.max(0, nVal - 1));
-        lEl.max = maxL;
-        let lParsed = parseInt(lEl.value, 10);
-        if (isNaN(lParsed)) lParsed = 0;
-        if (lParsed > maxL) lEl.value = maxL;
-        if (lParsed < 0) lEl.value = 0;
-        updateConstraintsFromL();
+      function updateConstraints() {
+        const n = parseInt(elements.nInput.value, 10);
+        const maxL = isNaN(n) ? 0 : Math.max(0, n - 1);
+        
+        elements.lInput.max = maxL;
+        let l = parseInt(elements.lInput.value, 10);
+        if (isNaN(l) || l < 0) l = 0;
+        if (l > maxL) l = maxL;
+        elements.lInput.value = l;
+        
+        const absL = Math.abs(l);
+        elements.mInput.min = -absL;
+        elements.mInput.max = absL;
+        
+        let m = parseInt(elements.mInput.value, 10);
+        if (isNaN(m) || Math.abs(m) > absL) m = 0;
+        elements.mInput.value = m;
       }
 
-      function updateConstraintsFromL() {
-        const lVal = parseInt(lEl.value, 10);
-        const absL = isNaN(lVal) ? 0 : Math.abs(lVal);
-        mEl.min = -absL;
-        mEl.max = absL;
-        let mParsed = parseInt(mEl.value, 10);
-        if (isNaN(mParsed)) mParsed = 0;
-        if (mParsed < -absL) mEl.value = -absL;
-        if (mParsed > absL) mEl.value = absL;
-      }
-
-      [nEl, lEl, mEl].forEach(el => {
-        if (!el) return;
+      // Event listeners
+      [elements.nInput, elements.lInput, elements.mInput].forEach(el => {
         el.addEventListener('input', () => {
-          if (el === nEl) updateConstraintsFromN();
-          if (el === lEl) updateConstraintsFromL();
-          refreshLabel();
-        });
-        el.addEventListener('change', () => {
-          if (el === nEl) updateConstraintsFromN();
-          if (el === lEl) updateConstraintsFromL();
+          updateConstraints();
           refreshLabel();
         });
       });
 
-      // We no longer force >=1 here — sketch.js will handle 0 logic centrally.
-      // Keep light UX guard: prevent Enter from submitting and leaving blank
-      const numEl = document.getElementById('numElectronsInput');
-      if (numEl) {
-        numEl.addEventListener('keydown', (ev) => {
-          if (ev.key === 'Enter') {
-            ev.preventDefault();
-            try { numEl.blur(); } catch (e) {}
-          }
-        });
-      }
-
-      setTimeout(() => {
-        updateConstraintsFromN();
-        refreshLabel();
-        setTimeout(updateFieldWidth, 60);
-      }, 20);
-
-      function initLangSelect() {
-        langSelect.value = (currentLang === 'en') ? 'en' : 'vi';
-      }
-
-      langSelect.addEventListener('change', () => {
-        currentLang = langSelect.value === 'en' ? 'en' : 'vi';
+      elements.langSelect.addEventListener('change', () => {
+        currentLang = elements.langSelect.value;
         localStorage.setItem('orbital_lang', currentLang);
-        initLangSelect();
         applyTranslations();
       });
 
-      initLangSelect();
-      applyTranslations();
-
-      let _fwTimeout = null;
-      window.addEventListener('resize', () => {
-        if (_fwTimeout) clearTimeout(_fwTimeout);
-        _fwTimeout = setTimeout(updateFieldWidth, 80);
+      elements.modeSelect.addEventListener('change', () => {
+        currentMode = elements.modeSelect.value;
+        localStorage.setItem('orbital_mode', currentMode);
+        window.orbitalMode = currentMode;
+        applyTranslations();
+        
+        try {
+          if (typeof window.updateOverlayButtonForMode === 'function') {
+            window.updateOverlayButtonForMode(currentMode);
+          }
+          if (typeof window.scheduleOrbitalUpdate === 'function') {
+            window.scheduleOrbitalUpdate(50);
+          }
+        } catch (e) {}
       });
 
       function updateToggleRotateText() {
         const t = translations[currentLang] || translations.vi;
-        // sync with real state in window.autoRotate if available
-        const ar = (typeof window.autoRotate !== 'undefined') ? !!window.autoRotate : localAutoRotate;
+        const ar = typeof window.autoRotate !== 'undefined' ? !!window.autoRotate : localAutoRotate;
         localAutoRotate = ar;
+        
         const text = ar ? t.toggleRotateOn : t.toggleRotateOff;
-        toggleBtn.textContent = text;
-        const title = ar ? (t.toggleRotateOnTitle || t.toggleRotateOn) : (t.toggleRotateOffTitle || t.toggleRotateOff);
-        toggleBtn.title = title;
-        toggleBtn.setAttribute('aria-label', title);
+        elements.toggleBtn.textContent = text;
+        elements.toggleBtn.title = text;
+        elements.toggleBtn.setAttribute('aria-label', text);
       }
 
-      // expose this helper globally so sketch.js can call it when autoRotate changes
       window.updateToggleRotateText = updateToggleRotateText;
 
-      toggleBtn.addEventListener('click', (e) => {
-        // prefer sketch-provided toggle if present
+      elements.toggleBtn.addEventListener('click', () => {
         if (typeof window.toggleAutoRotate === 'function') {
           window.toggleAutoRotate();
-          // immediately sync the label with the authoritative window.autoRotate
-          try { localAutoRotate = !!window.autoRotate; } catch (e) {}
-          try { updateToggleRotateText(); } catch (e) {}
+          try {
+            localAutoRotate = !!window.autoRotate;
+            updateToggleRotateText();
+          } catch (e) {}
         } else {
-          // fallback: flip local flag if sketch not ready yet
           localAutoRotate = !localAutoRotate;
-          try { updateToggleRotateText(); } catch (e) {}
-          try { window.autoRotate = localAutoRotate; } catch (err) {}
+          try {
+            window.autoRotate = localAutoRotate;
+            updateToggleRotateText();
+          } catch (e) {}
         }
       });
 
       window.refreshOrbitalLabel = refreshLabel;
-
       window.localizeNewElement = function(elem) {
         if (!elem) return;
-        elem = (elem instanceof Element) ? elem : (elem.elt || null);
-        if (!elem) return;
-        if (elem.dataset && elem.dataset.i18nKey) {
-          const key = elem.dataset.i18nKey;
-          const t = translations[currentLang] || translations.vi;
-          if (key === 'toggleOverlay') {
-            const isOn = elem.dataset.state === 'on' || elem.getAttribute('aria-pressed') === 'true';
-            elem.textContent = isOn ? (t.toggleOverlayOn || '') : (t.toggleOverlayOff || '');
-            elem.title = isOn ? (t.toggleOverlayOnTitle || elem.textContent) : (t.toggleOverlayOffTitle || elem.textContent);
-            elem.setAttribute('aria-label', elem.title);
-            return;
-          }
-          if (key === 'toggleElectrons') {
-            const isOn = elem.dataset.state === 'on' || elem.getAttribute('aria-pressed') === 'true';
-            elem.textContent = isOn ? (t.toggleElectronsOn || '') : (t.toggleElectronsOff || '');
-            elem.title = isOn ? (t.toggleElectronsOnTitle || elem.textContent) : (t.toggleElectronsOffTitle || elem.textContent);
-            elem.setAttribute('aria-label', elem.title);
-            return;
-          }
-          if (t[key]) {
-            elem.textContent = t[key];
-            if (t[key + 'Title']) { elem.title = t[key + 'Title']; elem.setAttribute('aria-label', t[key + 'Title']); }
-            return;
-          }
-        }
-      };
-
-      window.setLocalizedProgress = function(show, customText) {
+        elem = elem instanceof Element ? elem : (elem.elt || null);
+        if (!elem || !elem.dataset || !elem.dataset.i18nKey) return;
+        
         const t = translations[currentLang] || translations.vi;
-        if (!progressEl) return;
-        if (show) {
-          progressEl.style.display = 'block';
-          progressEl.textContent = customText || t.progressLoading || '';
-        } else {
-          progressEl.style.display = 'none';
+        const key = elem.dataset.i18nKey;
+        const isOn = elem.dataset.state === 'on' || elem.getAttribute('aria-pressed') === 'true';
+        const onKey = key + 'On';
+        const offKey = key + 'Off';
+        
+        if (t[onKey] && t[offKey]) {
+          elem.textContent = isOn ? t[onKey] : t[offKey];
+          elem.title = elem.textContent;
+          elem.setAttribute('aria-label', elem.textContent);
         }
       };
 
-      window.setLocalizedStatus = function(text) {
-        if (!statusEl) return;
-        statusEl.textContent = text || '';
-        statusEl.style.display = text ? 'block' : 'none';
-      };
-
+      setTimeout(() => {
+        updateConstraints();
+        refreshLabel();
+        applyTranslations();
+      }, 20);
     })();
-  </script>
 
-  <script>
-    // Watchdog + global error handlers
-    (function(){
+    // Error handling
+    (function() {
       const progressEl = document.getElementById('progress');
       const statusEl = document.getElementById('status');
 
-      function showStatusMessage(msg, extra) {
-        try {
-          if (progressEl) progressEl.style.display = 'none';
-          if (statusEl) {
-            statusEl.style.display = 'block';
-            statusEl.textContent = msg + (extra ? ("\n\n" + extra) : '');
-          } else {
-            console.warn('STATUS:', msg, extra || '');
-          }
-        } catch (e) { console.error(e); }
-      }
-
-      window.addEventListener('error', function(evt) {
-        const msg = 'Lỗi JavaScript: ' + (evt && evt.message ? String(evt.message) : 'Unknown error');
-        const file = evt && evt.filename ? ('\nFile: ' + evt.filename + ':' + evt.lineno) : '';
-        console.error('Global error caught', evt);
-        showStatusMessage('Có lỗi xảy ra khi khởi tạo ứng dụng.', msg + file);
-      });
-
-      window.addEventListener('unhandledrejection', function(evt) {
-        console.error('Unhandled promise rejection', evt);
-        showStatusMessage('Có lỗi bất ngờ (unhandled promise rejection).', String(evt && evt.reason ? evt.reason : evt));
-      });
-
-      function checkP5Immediate() {
-        if (typeof window.p5 === 'undefined' && typeof window.createCanvas === 'undefined') {
-          showStatusMessage('Thư viện p5.js không tải được.', 'Kiểm tra kết nối mạng hoặc URL CDN. Nếu bạn deploy trên GitHub Pages, đảm bảo tệp p5 được phép tải từ CDN hoặc thay bằng bản local.');
+      window.addEventListener('error', (evt) => {
+        console.error('Global error', evt);
+        if (statusEl) {
+          statusEl.style.display = 'block';
+          statusEl.textContent = 'Lỗi: ' + (evt.message || 'Unknown error');
         }
-      }
+      });
 
-      setTimeout(checkP5Immediate, 1200);
+      window.addEventListener('unhandledrejection', (evt) => {
+        console.error('Unhandled rejection', evt);
+        if (statusEl) {
+          statusEl.style.display = 'block';
+          statusEl.textContent = 'Lỗi async: ' + (evt.reason || 'Unknown');
+        }
+      });
 
-      const WATCHDOG_MS = 7000;
       setTimeout(() => {
-        if (!window.orbitalReady) {
-          let msg = 'Việc khởi tạo mất quá lâu hoặc bị lỗi — vẫn hiện "Loading...".';
-          let extra = 'Mở DevTools (Console) để xem lỗi chi tiết. Kiểm tra:\n' +
-                      '- p5.js và sketch.js có tải thành công? (Kiểm tra Network tab)\n' +
-                      '- Đường dẫn tới sketch.js chính xác không khi deploy lên GitHub (có thể cần base path)?\n' +
-                      '- Nếu dùng GitHub Pages, kiểm tra console/network để xem tệp có trả về 404 hay không.';
-          showStatusMessage(msg, extra);
+        if (!window.orbitalReady && progressEl) {
+          progressEl.style.display = 'block';
+          progressEl.textContent = 'Đang khởi tạo...';
         }
-      }, WATCHDOG_MS);
+      }, 1000);
+
+      setTimeout(() => {
+        if (!window.orbitalReady && statusEl) {
+          statusEl.style.display = 'block';
+          statusEl.textContent = 'Khởi tạo mất quá lâu. Vui lòng kiểm tra Console.';
+        }
+      }, 7000);
     })();
   </script>
+
+  <!-- visually-hidden helper -->
+  <style>
+    .visually-hidden {
+      position: absolute !important;
+      height: 1px; width: 1px;
+      overflow: hidden;
+      clip: rect(1px, 1px, 1px, 1px);
+      white-space: nowrap;
+      border: 0; padding: 0; margin: -1px;
+    }
+  </style>
 </body>
 </html>
