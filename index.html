@@ -13,9 +13,6 @@
   <!-- Google Fonts - Optimized -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 
-  <!-- External styles (added) -->
-  <link rel="stylesheet" href="styles.css">
-
   <style>
     /* ============================================
        MODERN SCIENTIFIC DESIGN SYSTEM
@@ -107,7 +104,6 @@
       width: 100%;
       height: 100%;
       z-index: 0;
-      touch-action: none;
     }
 
     /* ============================================
@@ -157,7 +153,6 @@
       gap: var(--space-lg);
       pointer-events: none;
       z-index: 10003;
-      max-width: calc(100% - 32px);
     }
     
     #uiLeft, #uiRight {
@@ -428,7 +423,6 @@
       
       box-shadow: var(--shadow-sm);
       transition: all var(--transition-fast);
-      -webkit-tap-highlight-color: transparent;
     }
     
     .btn::before {
@@ -612,19 +606,14 @@
         --space-lg: 12px;
       }
       
-      /* Move UI to bottom on narrower screens to avoid covering canvas center */
       #ui {
-        top: auto;
-        bottom: var(--space-lg);
-        left: var(--space-lg);
-        right: var(--space-lg);
-        flex-direction: row-reverse;
-        align-items: flex-end;
+        flex-direction: column;
+        gap: var(--space-md);
       }
       
       #uiLeft, #uiRight {
-        max-width: 48%;
-        width: auto;
+        max-width: 100%;
+        width: 100%;
       }
       
       #uiRight {
@@ -650,23 +639,12 @@
     
     @media (max-width: 480px) {
       :root {
-        --field-width: 140px;
+        --field-width: 100%;
         --space-lg: 10px;
-      }
-      
-      #ui {
-        gap: 8px;
-      }
-      
-      #uiLeft, #uiRight {
-        max-width: 50%;
       }
       
       .panel {
         padding: var(--space-md);
-        border-radius: 10px;
-        max-height: 60vh;
-        overflow-y: auto;
       }
       
       .hero-content {
@@ -749,7 +727,7 @@
         <button id="toggleRotateBtn" class="btn secondary" 
                 title="Bật/tắt xoay tự động" 
                 aria-label="Bật/tắt xoay tự động" 
-                data-i18n-key="toggleRotate" data-state="on" type="button">
+                data-i18n-key="toggleRotate" data-state="on">
           Tắt xoay tự động
         </button>
       </div>
@@ -784,8 +762,7 @@
       <!-- Number of Points -->
       <div class="field">
         <label id="numPointsLabel" for="numElectronsInput">Số điểm</label>
-        <!-- max updated to match MAX_ELECTRONS in sketch.js -->
-        <input id="numElectronsInput" type="number" min="0" max="30000" value="5000" inputmode="numeric" />
+        <input id="numElectronsInput" type="number" min="0" max="2000000" value="5000" inputmode="numeric" />
       </div>
 
       <!-- Orbital Label Display (no longer button-like) -->
@@ -1077,21 +1054,28 @@
         localAutoRotate = ar;
         
         const text = ar ? t.toggleRotateOn : t.toggleRotateOff;
-        if (elements.toggleBtn) {
-          try {
-            elements.toggleBtn.textContent = text;
-            elements.toggleBtn.title = text;
-            elements.toggleBtn.setAttribute('aria-label', text);
-          } catch (e) {}
-        }
+        elements.toggleBtn.textContent = text;
+        elements.toggleBtn.title = text;
+        elements.toggleBtn.setAttribute('aria-label', text);
       }
 
       window.updateToggleRotateText = updateToggleRotateText;
 
-      // NOTE: we intentionally DO NOT attach the toggle click handler here.
-      // The handler depends on p5's setup() (window.toggleAutoRotate), so we attach robust touch/click handlers
-      // inside sketch.js setupUI() when p5 is initialized. This prevents timing issues on mobile where users
-      // may tap UI before p5.setup() runs.
+      elements.toggleBtn.addEventListener('click', () => {
+        if (typeof window.toggleAutoRotate === 'function') {
+          window.toggleAutoRotate();
+          try {
+            localAutoRotate = !!window.autoRotate;
+            updateToggleRotateText();
+          } catch (e) {}
+        } else {
+          localAutoRotate = !localAutoRotate;
+          try {
+            window.autoRotate = localAutoRotate;
+            updateToggleRotateText();
+          } catch (e) {}
+        }
+      });
 
       window.refreshOrbitalLabel = refreshLabel;
       window.localizeNewElement = function(elem) {

@@ -111,9 +111,7 @@ select:focus {
   #ui {
     left: 10px;
     right: 10px;
-    top: auto;
-    bottom: 10px;
-    gap: 8px;
+    top: 10px;
   }
   
   .btn {
